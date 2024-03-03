@@ -13,6 +13,7 @@ export default function App() {
   const video = useRef(null);
   const [timezoneData, setTimezoneData] = useState(null);
   const [fixtureId, setFixtureId] = useState(null);
+  const [playersData, setPlayersData] = useState(null);
 
   useEffect(() => {
     lockOrientation();
@@ -56,7 +57,34 @@ export default function App() {
       if (response.data.response && response.data.response.length > 0) {
         const fixtureId = response.data.response[0].fixture.id;
         setFixtureId(fixtureId);
-        console.log(response.data.response[0].fixture.id);
+
+        // Fetch players' data based on the fixture ID
+        const playersOptions = {
+          method: 'GET',
+          url: 'https://api-football-v1.p.rapidapi.com/v3/fixtures/players',
+          params: {
+            fixture: fixtureId,
+            team: '33'
+          },
+          headers: {
+            'X-RapidAPI-Key':
+              'e0f48d2c0cmsha8e774e7a2187dep1ed397jsn8c42560af15d',
+            'X-RapidAPI-Host': 'api-football-v1.p.rapidapi.com'
+          }
+        };
+
+        const playersResponse = await axios.request(playersOptions);
+        console.log(playersResponse.data);
+
+        // Extract players' data and set it to state
+        if (
+          playersResponse.data.response &&
+          playersResponse.data.response.length > 0
+        ) {
+          const playersData = playersResponse.data.response[0].players;
+          setPlayersData(playersData);
+          console.log(playersData);
+        }
       }
     } catch (error) {
       console.error(error);
