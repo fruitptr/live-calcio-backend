@@ -45,7 +45,9 @@ export default function RootLayout() {
 function RootLayoutNav() {
 
   return (
-      <Stack>
+      <Stack  screenOptions={{
+        headerShown: false
+      }}>
         <Stack.Screen name="auth" options={{ headerShown: false }} />
         <Stack.Screen name="video" options={{ headerShown: false }} />
         <Stack.Screen name="account" options={{ headerShown: false }} />

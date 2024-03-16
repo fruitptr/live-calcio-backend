@@ -11,6 +11,7 @@ import {
   TextInput,
   View
 } from 'react-native';
+import { router } from 'expo-router';
 const logo = require('../assets/LiveCalcioLogo.png');
 
 // contact me :)
@@ -72,11 +73,14 @@ export default function LoginForm() {
         >
           <Text style={styles.buttonText}>LOGIN</Text>
         </Pressable>
-        <Text style={styles.optionsText}>OR LOGIN WITH</Text>
       </View>
 
       <Text style={styles.footerText}>
-        Don't Have Account?<Text style={styles.signup}> Sign Up</Text>
+        <Button
+          style={styles.signup}
+          title="Go to Signup"
+          onPress={() => router.push('/auth/RegisterScreen')}
+        />
       </Text>
     </SafeAreaView>
   );

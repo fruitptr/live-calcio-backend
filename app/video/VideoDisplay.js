@@ -128,7 +128,7 @@ export default function App() {
                   passes: 200,
                   tackles: 30
                 }}
-                onToggleSwitch={() => {}} // Placeholder for the onToggleSwitch function
+                onToggleSwitch={() => {}}
               />
             </View>
           </View>
@@ -166,12 +166,12 @@ const styles = StyleSheet.create({
   },
   overlay: {
     ...StyleSheet.absoluteFillObject,
-    justifyContent: 'flex-start' // Align header and button to top of overlay
+    justifyContent: 'flex-start'
   },
   button: {
-    position: 'absolute', // Position the button absolutely
-    top: 70, // Adjust as needed
-    right: 20, // Adjust as needed
+    position: 'absolute',
+    top: 70,
+    right: 20,
     backgroundColor: 'white',
     padding: 10,
     borderRadius: 5

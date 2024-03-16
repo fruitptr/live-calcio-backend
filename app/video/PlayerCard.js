@@ -40,7 +40,7 @@ const PlayerCard = ({ name, imageSource, stats, onToggleSwitch }) => {
 
 const styles = StyleSheet.create({
   container: {
-    backgroundColor: 'rgba(0, 0, 0, 0.8)', // Black with 50% opacity
+    backgroundColor: 'rgba(0, 0, 0, 0.8)',
     borderRadius: 10,
     padding: 10,
     shadowColor: '#000',
@@ -51,18 +51,18 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.25,
     shadowRadius: 3.84,
     elevation: 5,
-    borderColor: '#fff', // White border color
-    borderWidth: 3 // Border width
+    borderColor: '#fff',
+    borderWidth: 3
   },
   header: {
     flexDirection: 'row',
-    justifyContent: 'flex-end', // Align to the right
+    justifyContent: 'flex-end',
     alignItems: 'center'
   },
   statsText: {
     marginRight: 10,
     fontSize: 16,
-    color: '#fff' // White text color
+    color: '#fff'
   },
   image: {
     width: 100,
@@ -76,7 +76,7 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
     textAlign: 'center',
     marginBottom: 10,
-    color: '#fff' // White text color
+    color: '#fff'
   },
   separator: {
     borderBottomColor: '#ccc',
@@ -87,7 +87,7 @@ const styles = StyleSheet.create({
   stat: {
     fontSize: 16,
     marginBottom: 5,
-    color: '#fff' // White text color
+    color: '#fff'
   }
 });
 

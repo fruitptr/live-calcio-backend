@@ -5,158 +5,99 @@ import {
   TextInput,
   TouchableOpacity,
   StyleSheet,
-  ScrollView
+  ImageBackground,
+  Image,
+  KeyboardAvoidingView,
+  Platform
 } from 'react-native';
-import Header from '../../Components/Header';
 
 const RegisterScreen = () => {
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-  const [selectedSubscription, setSelectedSubscription] = useState(null);
 
+  // This function would handle the user registration
   const handleRegister = () => {
-    // Implement your registration logic here
-  };
-
-  const handleSelectSubscription = subscription => {
-    setSelectedSubscription(
-      subscription === selectedSubscription ? null : subscription
-    );
+    console.log('Register button pressed');
   };
 
   return (
-    <ScrollView contentContainerStyle={styles.scrollViewContent}>
-      <View style={styles.container}>
-        <Header />
-        <Text style={styles.registerText}>Register</Text>
+    <ImageBackground
+      source={require('./../../assets/bgImg1.jpg')} // Replace with your background image
+      style={styles.background}
+    >
+      <KeyboardAvoidingView
+        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+        style={styles.container}
+      >
+        <Text style={styles.header}>Create an Account</Text>
+
         <TextInput
           style={styles.input}
           placeholder="Name"
-          value={name}
           onChangeText={setName}
+          value={name}
+          autoCapitalize="words"
         />
+
         <TextInput
           style={styles.input}
           placeholder="Email"
-          value={email}
           onChangeText={setEmail}
+          value={email}
           keyboardType="email-address"
+          autoCapitalize="none"
         />
+
         <TextInput
           style={styles.input}
-          placeholder="Password"
-          value={password}
+          placeholder="Choose Password"
           onChangeText={setPassword}
+          value={password}
           secureTextEntry
         />
-        <Text style={styles.subscriptionText}>Subscription Plan:</Text>
-        {/* Subscription Plan A */}
-        <TouchableOpacity
-          style={[
-            styles.subscriptionCard,
-            selectedSubscription === 'A' && styles.selectedCard
-          ]}
-          onPress={() => handleSelectSubscription('A')}
-        >
-          <View style={styles.subscriptionHeader}>
-            <Text style={styles.subscriptionName}>Subscription A</Text>
-          </View>
-          <View style={styles.featuresContainer}>
-            <Text style={styles.featureTitle}>Access to:</Text>
-            <View>
-              <Text>Feature 1</Text>
-              <Text>Feature 2</Text>
-              <Text>Feature 3</Text>
-            </View>
-          </View>
-          <Text style={styles.subscriptionPrice}>Free</Text>
-        </TouchableOpacity>
-        {/* Subscription Plan B */}
-        <TouchableOpacity
-          style={[
-            styles.subscriptionCard,
-            selectedSubscription === 'B' && styles.selectedCard
-          ]}
-          onPress={() => handleSelectSubscription('B')}
-        >
-          <View style={styles.subscriptionHeader}>
-            <Text style={styles.subscriptionName}>Subscription B</Text>
-          </View>
-          <View style={styles.featuresContainer}>
-            <Text style={styles.featureTitle}>Access to:</Text>
-            <View>
-              <Text>Feature 1</Text>
-              <Text>Feature 2</Text>
-              <Text>Feature 3</Text>
-            </View>
-          </View>
-          <Text style={styles.subscriptionPrice}>Free</Text>
-        </TouchableOpacity>
-        {/* Subscription Plan C */}
-        <TouchableOpacity
-          style={[
-            styles.subscriptionCard,
-            selectedSubscription === 'C' && styles.selectedCard
-          ]}
-          onPress={() => handleSelectSubscription('C')}
-        >
-          <View style={styles.subscriptionHeader}>
-            <Text style={styles.subscriptionName}>Subscription C</Text>
-          </View>
-          <View style={styles.featuresContainer}>
-            <Text style={styles.featureTitle}>Access to:</Text>
-            <View>
-              <Text>Feature 1</Text>
-              <Text>Feature 2</Text>
-              <Text>Feature 3</Text>
-            </View>
-          </View>
-          <Text style={styles.subscriptionPrice}>Free</Text>
-        </TouchableOpacity>
+
+        <View style={styles.passwordRequirements}>
+          <Text style={styles.requirementText}>8 characters minimum</Text>
+          <Text style={styles.requirementText}>
+            At least 1 number and special character
+          </Text>
+        </View>
+
         <TouchableOpacity
           style={styles.registerButton}
           onPress={handleRegister}
         >
-          <Text style={styles.registerButtonText}>Register</Text>
+          <Text style={styles.registerButtonText}>Create Account</Text>
         </TouchableOpacity>
-      </View>
-    </ScrollView>
+
+        <View style={styles.loginRedirect}>
+          <Text style={styles.loginText}>Already have an account? </Text>
+          <TouchableOpacity
+            onPress={() => {
+              /* Navigate to login */
+            }}
+          >
+            <Text style={styles.loginButton}>Sign In</Text>
+          </TouchableOpacity>
+        </View>
+      </KeyboardAvoidingView>
+    </ImageBackground>
   );
 };
 
 const styles = StyleSheet.create({
-  scrollViewContent: {
-    flexGrow: 1
-  },
-  container: {
+  background: {
     flex: 1,
+    justifyContent: 'center',
     alignItems: 'center'
   },
-  registerText: {
-    fontSize: 24,
-    marginBottom: 20
-  },
-  input: {
-    width: '80%',
-    height: 40,
-    borderWidth: 1,
-    borderColor: 'black',
-    marginBottom: 10,
-    padding: 10,
-    borderRadius: 20 // Rounded text fields
-  },
-  subscriptionText: {
-    fontSize: 20,
-    marginBottom: 10
-  },
-  subscriptionCard: {
-    width: '80%',
-    borderWidth: 1,
-    borderColor: 'black',
-    padding: 10,
-    marginBottom: 10,
-    borderRadius: 20, // Rounded edges for cards
+  container: {
+    width: '85%',
+    backgroundColor: 'rgba(255, 255, 255, 1)',
+    borderRadius: 20,
+    padding: 20,
+    alignItems: 'center',
     shadowColor: '#000',
     shadowOffset: {
       width: 0,
@@ -164,50 +105,54 @@ const styles = StyleSheet.create({
     },
     shadowOpacity: 0.25,
     shadowRadius: 3.84,
-    elevation: 5,
-    backgroundColor: 'white'
+    elevation: 5
   },
-  selectedCard: {
-    borderColor: '#cc0000',
-    borderWidth: 2,
-    borderStyle: 'dotted'
-  },
-  subscriptionHeader: {
-    backgroundColor: '#cc0000',
-    padding: 10,
-    borderRadius: 20, // Rounded header
-    marginBottom: 10
-  },
-  subscriptionName: {
-    color: 'white',
+  header: {
+    fontSize: 24,
     fontWeight: 'bold',
-    textAlign: 'center'
+    marginBottom: 16,
+    color: '#cc0000'
   },
-  featuresContainer: {
-    backgroundColor: 'white',
-    padding: 10,
-    marginBottom: 10
+  input: {
+    width: '100%',
+    padding: 15,
+    marginVertical: 10,
+    borderWidth: 1,
+    borderColor: '#ccc',
+    borderRadius: 10
   },
-  featureTitle: {
-    fontWeight: 'bold',
-    marginBottom: 5
+  passwordRequirements: {
+    alignSelf: 'flex-start',
+    marginBottom: 16
   },
-  subscriptionPrice: {
-    backgroundColor: '#cc0000',
-    color: 'white',
-    fontWeight: 'bold',
-    padding: 10,
-    textAlign: 'center',
-    borderRadius: 20 // Rounded price
+  requirementText: {
+    fontSize: 12,
+    color: '#888'
   },
   registerButton: {
+    width: '100%',
+    padding: 15,
+    borderRadius: 10,
     backgroundColor: '#cc0000',
-    padding: 10,
-    borderRadius: 20, // Rounded button
-    marginTop: 20
+    marginBottom: 10
   },
   registerButtonText: {
-    color: 'white',
+    color: '#fff',
+    textAlign: 'center',
+    fontWeight: 'bold',
+    fontSize: 16
+  },
+  loginRedirect: {
+    flexDirection: 'row',
+    alignItems: 'center'
+  },
+  loginText: {
+    fontSize: 14,
+    color: '#888'
+  },
+  loginButton: {
+    fontSize: 14,
+    color: '#cc0000',
     fontWeight: 'bold'
   }
 });
