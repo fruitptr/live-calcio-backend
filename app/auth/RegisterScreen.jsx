@@ -10,6 +10,7 @@ import {
   KeyboardAvoidingView,
   Platform
 } from 'react-native';
+import { router } from 'expo-router';
 
 const RegisterScreen = () => {
   const [name, setName] = useState('');
@@ -75,7 +76,7 @@ const RegisterScreen = () => {
           <Text style={styles.loginText}>Already have an account? </Text>
           <TouchableOpacity
             onPress={() => {
-              /* Navigate to login */
+              router.push('./Login');
             }}
           >
             <Text style={styles.loginButton}>Sign In</Text>
