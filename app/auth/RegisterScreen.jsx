@@ -1,4 +1,6 @@
 import React, { useState } from 'react';
+import { FIREBASE_AUTH } from '../../firebaseConfig';
+import { createUserWithEmailAndPassword, updateProfile } from 'firebase/auth';
 import {
   View,
   Text,
@@ -8,7 +10,8 @@ import {
   ImageBackground,
   Image,
   KeyboardAvoidingView,
-  Platform
+  Platform,
+  Alert
 } from 'react-native';
 import { router } from 'expo-router';
 
@@ -16,11 +19,22 @@ const RegisterScreen = () => {
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const auth = FIREBASE_AUTH;
 
   // This function would handle the user registration
-  const handleRegister = () => {
-    console.log('Register button pressed');
-  };
+  const handleRegister = async () => {
+    try {
+      const response = await createUserWithEmailAndPassword(auth, email, password);
+      console.log('User registered successfully!', response);
+      await updateProfile(auth.currentUser, { name: name, subscription: 0 });
+      console.log('Profile updated successfully!');
+      Alert.alert('Success!', 'Account created!');
+  }
+  catch (error) {
+    console.error('Error registering user:', error);
+    Alert.alert('Error registering user', error.message);
+  }
+}
 
   return (
     <ImageBackground

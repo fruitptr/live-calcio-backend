@@ -1,4 +1,6 @@
 import React, { useState } from 'react';
+import { FIREBASE_AUTH } from '../../firebaseConfig';
+import { signInWithEmailAndPassword } from 'firebase/auth';
 import {
   Alert,
   ImageBackground,
@@ -13,16 +15,25 @@ import {
   Image
 } from 'react-native';
 import { router } from 'expo-router';
+import { signInWithEmailAndPassword } from 'firebase/auth';
 const backgroundImage = require('./../../assets/loginbg1.png');
 
 export default function LoginForm() {
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
+  const auth = FIREBASE_AUTH;
 
-  const handleLogin = () => {
-    Alert.alert('Login Successful', 'Welcome back!');
-    // Add navigation logic if needed
-  };
+  const handleLogin = async () => {
+    try {
+      const response = await signInWithEmailAndPassword(auth, username, password);
+      console.log('User logged in successfully!', response);
+      Alert.alert('Success!', 'Logged in!');
+    }
+    catch (error) {
+      console.error('Error logging in:', error);
+      Alert.alert('Error logging in', error.message);
+    }
+  }
 
   const handleGoToSignup = () => {
     router.push('./RegisterScreen');
