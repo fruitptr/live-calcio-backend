@@ -1,6 +1,7 @@
 import { StatusBar } from 'expo-status-bar';
 import { StyleSheet, View, TouchableOpacity, Text } from 'react-native';
 import * as ScreenOrientation from 'expo-screen-orientation';
+import * as ImagePicker from 'expo-image-picker';
 import { useEffect, useState, useRef } from 'react';
 import { Video, ResizeMode } from 'expo-av';
 import Header from '../../Components/Header';
@@ -10,6 +11,8 @@ import { FIRESTORE_DB } from '../../firebaseConfig';
 import { collection, getDocs } from 'firebase/firestore';
 
 export default function App() {
+  const [videoURI, setVideoURI] = useState(null);
+  const [aspectRatio, setAspectRatio] = useState(16 / 9);
   const [orientation, setOrientation] = useState(1);
   const [isLocked, setIsLocked] = useState(false);
   const video = useRef(null);
@@ -58,9 +61,36 @@ export default function App() {
   const [recordsData, setRecordsData] = useState(null);
 
   useEffect(() => {
-    lockOrientation();
-    fetchTimezoneData();
+    // lockOrientation();
+    // fetchTimezoneData();
   }, []);
+
+  useEffect(() => {
+    if (videoURI) {
+      lockOrientation();
+    }
+  }, [videoURI]);
+
+  const pickVideo = async () => {
+    const permissionResult =
+      await ImagePicker.requestMediaLibraryPermissionsAsync();
+    if (permissionResult.granted === false) {
+      Alert.alert("You've refused to allow this app to access your videos!");
+      return;
+    }
+
+    const result = await ImagePicker.launchImageLibraryAsync({
+      mediaTypes: ImagePicker.MediaTypeOptions.Videos
+    });
+
+    if (!result.cancelled && result.assets && result.assets.length > 0) {
+      const video = result.assets[0];
+      setVideoURI(video.uri);
+      const aspectRatio = video.width / video.height;
+      setAspectRatio(aspectRatio);
+      console.log(video.uri);
+    }
+  };
 
   const lockOrientation = async () => {
     await ScreenOrientation.lockAsync(
@@ -144,15 +174,14 @@ export default function App() {
     console.log(recordsData)
   }
 
+  if (videoURI) {
   return (
     <View style={styles.container}>
       <View style={styles.videoContainer}>
         <Video
           ref={video}
           style={styles.video}
-          source={{
-            uri: 'https://d23dyxeqlo5psv.cloudfront.net/big_buck_bunny.mp4'
-          }}
+          source={{ uri: videoURI }}
           useNativeControls
           resizeMode={ResizeMode.CONTAIN}
           isLooping
@@ -167,7 +196,8 @@ export default function App() {
         {!isLocked && (
           <View style={styles.overlay}>
             <Header />
-            <TouchableOpacity style={styles.button}>
+            <TouchableOpacity style={styles.button}
+            onPress={handlePlayerTapped}>
               <Text style={styles.buttonText}>Tap on a player</Text>
             </TouchableOpacity>
             <View style={styles.PlayerCardStyles}>
@@ -207,9 +237,61 @@ export default function App() {
       <StatusBar style="auto" hidden={true} />
     </View>
   );
+} else {
+  return (
+    <View style={styles.Ucontainer}>
+      <Header />
+      <View style={styles.UcontentContainer}>
+        <View style={styles.uploadTextContainer}>
+          <Text style={styles.UuploadText}>Upload</Text>
+          <Text style={styles.UuploadText}>Video</Text>
+        </View>
+        <TouchableOpacity style={styles.uploadButton} onPress={pickVideo}>
+          <Text style={styles.UbuttonText}>Browse</Text>
+          <Text style={styles.UbuttonText}>Files</Text>
+        </TouchableOpacity>
+      </View>
+    </View>
+  );
 }
+};
 
 const styles = StyleSheet.create({
+  Ucontainer: {
+    flex: 1,
+    alignItems: 'center'
+  },
+  UcontentContainer: {
+    flex: 1,
+    justifyContent: 'center', // Center content vertically
+    alignItems: 'center', // Center content horizontally
+    width: '100%' // Take full width
+  },
+  uploadButton: {
+    borderWidth: 2,
+    backgroundColor: '#cc0000',
+    width: 150,
+    height: 100,
+    borderRadius: 8,
+    alignItems: 'center',
+    justifyContent: 'center'
+  },
+  UbuttonText: {
+    fontSize: 24,
+    color: 'white',
+    fontWeight: 'bold'
+  },
+  UuploadText: {
+    fontSize: 38,
+    color: '#cc0000',
+    fontWeight: 'bold'
+  },
+
+  uploadTextContainer: {
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: 30 // Add margin for better spacing
+  },
   container: {
     flex: 1,
     backgroundColor: 'black',
