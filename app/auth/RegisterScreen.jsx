@@ -1,6 +1,8 @@
 import React, { useState } from 'react';
 import { FIREBASE_AUTH } from '../../firebaseConfig';
 import { createUserWithEmailAndPassword, updateProfile } from 'firebase/auth';
+import { FIRESTORE_DB } from '../../firebaseConfig';
+import { doc, setDoc } from 'firebase/firestore';
 import {
   View,
   Text,
@@ -20,13 +22,19 @@ const RegisterScreen = () => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const auth = FIREBASE_AUTH;
+  const db = FIRESTORE_DB;
 
   // This function would handle the user registration
   const handleRegister = async () => {
     try {
       const response = await createUserWithEmailAndPassword(auth, email, password);
       console.log('User registered successfully!', response);
-      await updateProfile(auth.currentUser, { name: name, subscription: 0 });
+      await updateProfile(auth.currentUser, { displayName: name});
+      const userDoc = doc(db, 'users', auth.currentUser.uid);
+      await setDoc(userDoc, {
+        email: email,
+        subscription: 0
+      });
       console.log('Profile updated successfully!');
       Alert.alert('Success!', 'Account created!');
   }

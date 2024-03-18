@@ -1,8 +1,22 @@
 import React from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, Image } from 'react-native';
 import Icon from 'react-native-vector-icons/MaterialIcons'; // You can choose the appropriate icon set
+import { FIREBASE_AUTH } from '../../firebaseConfig';
+import { signOut, onAuthStateChanged } from 'firebase/auth';
 
 const SettingsScreen = () => {
+  const auth = FIREBASE_AUTH;
+  username = auth.currentUser.displayName;
+  email = auth.currentUser.email;
+
+  onAuthStateChanged(auth, (user) => {
+    if (user) {
+      username = user.displayName;
+      email = user.email;
+      subscription = user.subscription;
+    }
+  });
+
   return (
     <View style={styles.container}>
       <View style={styles.header}>
@@ -12,8 +26,8 @@ const SettingsScreen = () => {
           color="white"
           style={styles.profilePic}
         />
-        <Text style={styles.name}>Mirza Abdullah</Text>
-        <Text style={styles.email}>mirzaabdullah@gmail.com</Text>
+        <Text style={styles.name}>{username}</Text>
+        <Text style={styles.email}>{email}</Text>
       </View>
       <TouchableOpacity style={styles.button}>
         <Icon name="person" size={24} color="#cc0000" />

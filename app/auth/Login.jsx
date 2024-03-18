@@ -1,6 +1,5 @@
 import React, { useState } from 'react';
 import { FIREBASE_AUTH } from '../../firebaseConfig';
-import { signInWithEmailAndPassword } from 'firebase/auth';
 import {
   Alert,
   ImageBackground,
@@ -27,11 +26,11 @@ export default function LoginForm() {
     try {
       const response = await signInWithEmailAndPassword(auth, username, password);
       console.log('User logged in successfully!', response);
-      Alert.alert('Success!', 'Logged in!');
+      router.push('./../account/SettingsScreen')
     }
     catch (error) {
       console.error('Error logging in:', error);
-      Alert.alert('Error logging in', error.message);
+      Alert.alert('Error logging in', 'Invalid credentials. Try again!');
     }
   }
 
