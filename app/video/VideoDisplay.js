@@ -6,6 +6,8 @@ import { Video, ResizeMode } from 'expo-av';
 import Header from '../../Components/Header';
 import PlayerCard from './PlayerCard';
 import axios from 'axios';
+import { FIRESTORE_DB } from '../../firebaseConfig';
+import { collection, getDocs } from 'firebase/firestore';
 
 export default function App() {
   const [orientation, setOrientation] = useState(1);
@@ -14,6 +16,46 @@ export default function App() {
   const [timezoneData, setTimezoneData] = useState(null);
   const [fixtureId, setFixtureId] = useState(null);
   const [playersData, setPlayersData] = useState(null);
+  const [playerData, setPlayerData] = useState(null);
+  const [jerseyNumber, setJerseyNumber] = useState(10);
+  const [playerImageSource, setPlayerImageSource] = useState(require('./../../assets/playerDemo.png'));
+  const positionsDict = {
+    "G": "Goalkeeper",
+    "D": "Defender",
+    "M": "Midfielder",
+    "F": "Forward"
+  };
+  const playerDict = {
+    24: 526,
+    20: 886,
+    2: 889,
+    19: 742,
+    29: 18846,
+    39: 903,
+    37: 284322,
+    17: 284324,
+    8: 1485,
+    10: 909,
+    11: 288006,
+    5: 2935,
+    21: 9971,
+    14: 174,
+    16: 15799,
+    7: 19220,
+    22: 2931,
+    53: 288112,
+    4: 74,
+    62: 284242,
+    6: 2467,
+    12: 37145,
+    23: 891,
+    35: 18772,
+    18: 747,
+    9: 908,
+    47: 163054,
+  };
+  const db = FIRESTORE_DB;
+  const [recordsData, setRecordsData] = useState(null);
 
   useEffect(() => {
     lockOrientation();
@@ -33,63 +75,74 @@ export default function App() {
   };
 
   const fetchTimezoneData = async () => {
-    try {
-      const options = {
-        method: 'GET',
-        url: 'https://api-football-v1.p.rapidapi.com/v3/fixtures',
-        params: {
-          season: '2023',
-          team: '33',
-          last: '1'
-        },
-        headers: {
-          'X-RapidAPI-Key':
-            'e0f48d2c0cmsha8e774e7a2187dep1ed397jsn8c42560af15d',
-          'X-RapidAPI-Host': 'api-football-v1.p.rapidapi.com'
-        }
-      };
+    const options = {
+      method: 'GET',
+      url: 'https://api-football-v1.p.rapidapi.com/v3/fixtures',
+      params: { season: '2023', team: '33', last: '1' },
+      headers: {
+        'X-RapidAPI-Key': 'e048552a78msh52ac7abb72eaaacp1b80f8jsn1b5155fdbf5f',
+        'X-RapidAPI-Host': 'api-football-v1.p.rapidapi.com'
+      }
+    };
 
+    try {
       const response = await axios.request(options);
       setTimezoneData(response.data);
-      console.log(response.data);
-
-      // Save the fixture ID to state
       if (response.data.response && response.data.response.length > 0) {
         const fixtureId = response.data.response[0].fixture.id;
         setFixtureId(fixtureId);
-
-        // Fetch players' data based on the fixture ID
-        const playersOptions = {
-          method: 'GET',
-          url: 'https://api-football-v1.p.rapidapi.com/v3/fixtures/players',
-          params: {
-            fixture: fixtureId,
-            team: '33'
-          },
-          headers: {
-            'X-RapidAPI-Key':
-              'e0f48d2c0cmsha8e774e7a2187dep1ed397jsn8c42560af15d',
-            'X-RapidAPI-Host': 'api-football-v1.p.rapidapi.com'
-          }
-        };
-
-        const playersResponse = await axios.request(playersOptions);
-        console.log(playersResponse.data);
-
-        // Extract players' data and set it to state
-        if (
-          playersResponse.data.response &&
-          playersResponse.data.response.length > 0
-        ) {
-          const playersData = playersResponse.data.response[0].players;
-          setPlayersData(playersData);
-          console.log(playersData);
-        }
+        fetchPlayersData(fixtureId);
       }
     } catch (error) {
       console.error(error);
     }
   };
+
+  const fetchPlayersData = async fixtureId => {
+    const playersOptions = {
+      method: 'GET',
+      url: 'https://api-football-v1.p.rapidapi.com/v3/fixtures/players',
+      params: { fixture: fixtureId, team: '33' },
+      headers: {
+        'X-RapidAPI-Key': 'e048552a78msh52ac7abb72eaaacp1b80f8jsn1b5155fdbf5f',
+        'X-RapidAPI-Host': 'api-football-v1.p.rapidapi.com'
+      }
+    };
+
+    try {
+      const playersResponse = await axios.request(playersOptions);
+      if (
+        playersResponse.data.response &&
+        playersResponse.data.response.length > 0
+      ) {
+        const playersData = playersResponse.data.response[0].players;
+        console.log(playersData)
+        setPlayersData(playersData);
+        findPlayerData(playersData, jerseyNumber);
+      }
+    } catch (error) {
+      console.error(error);
+    }
+  };
+
+  const findPlayerData = async (playersData, jerseyNumber) => {
+    const playerId = playerDict[jerseyNumber];
+    console.log("Player ID: ", playerId)
+    console.log(playersData)
+    const player = playersData.find(player => player.player.id === playerId);
+    console.log("Player stats: ", player.statistics[0])
+    setPlayerData(player);
+    setPlayerImageSource({ uri: player.player.photo });
+    fetchRecordsData();
+  };
+
+  const fetchRecordsData = async () => {
+    const recordsCollection = collection(db, 'records');
+    const recordsSnapshot = await getDocs(recordsCollection);
+    const recordsData = recordsSnapshot.docs.map(doc => doc.data());
+    setRecordsData(recordsData);
+    console.log(recordsData)
+  }
 
   return (
     <View style={styles.container}>
@@ -119,15 +172,24 @@ export default function App() {
             </TouchableOpacity>
             <View style={styles.PlayerCardStyles}>
               <PlayerCard
-                name="Mirza Abdullah"
-                imageSource={require('./../../assets/playerDemo.png')}
+                name= {playerData ? playerData.player.name : "Player Name"}
+                imageSource={ playerImageSource }
                 stats={{
-                  goals: 10,
-                  assists: 5,
-                  shots: 50,
-                  passes: 200,
-                  tackles: 30
+                  goals: playerData ? playerData.statistics[0].goals.total : 0,
+                  assists: playerData ? playerData.statistics[0].goals.assists : 0,
+                  shots: playerData ? playerData.statistics[0].shots.total : 0,
+                  passes: playerData ? playerData.statistics[0].passes.total : 0,
+                  tackles: playerData ? playerData.statistics[0].tackles.total : 0,
+                  fouls: playerData ? playerData.statistics[0].fouls.committed : 0,
+                  duelsWon: playerData ? playerData.statistics[0].duels.won : 0,
+                  offsides: playerData ? playerData.statistics[0].offsides : 0,
+                  foulsDrawn: playerData ? playerData.statistics[0].fouls.drawn : 0,
                 }}
+                minutesPlayed={playerData ? playerData.statistics[0].games.minutes : 0}
+                rating={playerData ? playerData.statistics[0].games.rating : 0}
+                records = {recordsData ? recordsData : []}
+                jerseyNumber={jerseyNumber}
+                position= { playerData ? positionsDict[playerData.statistics[0].games.position] : "Position"}
                 onToggleSwitch={() => {}}
               />
             </View>

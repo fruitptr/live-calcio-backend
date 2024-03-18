@@ -26,7 +26,7 @@ export default function LoginForm() {
     try {
       const response = await signInWithEmailAndPassword(auth, username, password);
       console.log('User logged in successfully!', response);
-      router.push('./../account/SettingsScreen')
+      router.push('./../video/VideoDisplay.js')
     }
     catch (error) {
       console.error('Error logging in:', error);

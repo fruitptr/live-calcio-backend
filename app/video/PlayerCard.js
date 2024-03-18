@@ -9,34 +9,56 @@ import {
   TouchableOpacity
 } from 'react-native';
 
-const PlayerCard = ({ name, imageSource, stats, onToggleSwitch }) => {
+const PlayerCard = ({ name, imageSource, stats, minutesPlayed, rating, records, jerseyNumber, position, onToggleSwitch }) => {
+  const replaceNullWithZero = value => {
+    return value !== null ? value : 0;
+  };
+
+  const getAdditionalText = (key, value) => {
+    const record = records.find(record => record.stat === key);
+    if (record && replaceNullWithZero(value) >= record.value - record.threshold) {
+      return `${replaceNullWithZero(value)}/${record.value} OFF THE RECORD`;
+    }
+    return '';
+  };
+
   return (
     <ScrollView
       contentContainerStyle={styles.container}
       showsVerticalScrollIndicator={false}
     >
       <View style={styles.card}>
-        <View style={styles.header}>
-          <Text style={styles.headerText}>Player Profile</Text>
-          <Switch
-            trackColor={{ false: '#767577', true: '#4CAF50' }}
-            thumbColor={stats ? '#f4f3f4' : '#f4f3f4'}
-            ios_backgroundColor="#3e3e3e"
-            onValueChange={onToggleSwitch}
-            value={stats}
-          />
+        {/* First Section */}
+        <View style={styles.firstSection}>
+          {/* Left Column */}
+          <View style={styles.leftColumn}>
+            <Text style={styles.name}>{name}</Text>
+            <Text style={styles.position}>{position}</Text>
+            <Text style={styles.jerseyNumber}>{jerseyNumber}</Text>
+          </View>
+          {/* Right Column */}
+          <View style={styles.rightColumn}>
+            <Image source={imageSource} style={styles.image} />
+          </View>
         </View>
-        <Image source={imageSource} style={styles.image} />
-        <Text style={styles.name}>{name}</Text>
-        <View style={styles.separator} />
-        <View style={styles.stats}>
+
+        {/* Second Section */}
+        <View style={styles.secondSection}>
+          <Text style={styles.minutesPlayed}>Minutes Played: {minutesPlayed}'</Text>
+          <Text style={styles.rating}>Rating: {rating}</Text>
+        </View>
+
+        {/* Third Section */}
+        <View style={styles.thirdSection}>
           {stats &&
             Object.entries(stats).map(([key, value]) => (
               <View key={key} style={styles.statRow}>
-                <Text style={styles.statKey}>
-                  {key.charAt(0).toUpperCase() + key.slice(1)}:
+                <Text style={styles.statText}>
+                  {key.charAt(0).toUpperCase() + key.slice(1)}: {replaceNullWithZero(value)}
                 </Text>
-                <Text style={styles.statValue}>{value}</Text>
+                <Text style={styles.additionalText}>
+                  {getAdditionalText(key, value)}
+                </Text>
               </View>
             ))}
         </View>
@@ -52,73 +74,86 @@ const styles = StyleSheet.create({
     justifyContent: 'center'
   },
   card: {
-    backgroundColor: 'white',
+    backgroundColor: 'rgba(0, 0, 0, 0.7)',
     borderRadius: 20,
     paddingVertical: 20,
     paddingHorizontal: 15,
     width: '100%',
     maxWidth: 350,
-    shadowColor: '#000',
-    shadowOffset: {
-      width: 0,
-      height: 12
-    },
-    shadowOpacity: 0.58,
-    shadowRadius: 16.0,
-    elevation: 24,
     borderWidth: 2,
-    borderColor: '#cc0000'
+    borderColor: '#cc0000',
   },
-  header: {
+  firstSection: {
     flexDirection: 'row',
     justifyContent: 'space-between',
+    marginBottom: 10,
+    borderBottomWidth: 1,
+    borderBottomColor: '#cc0000',
+  },
+  leftColumn: {
+    flex: 1,
+  },
+  rightColumn: {
     alignItems: 'center',
-    marginBottom: 15
-  },
-  headerText: {
-    fontSize: 18,
-    fontWeight: 'bold',
-    color: '#cc0000'
-  },
-  image: {
-    width: 120,
-    height: 120,
-    borderRadius: 60,
-    alignSelf: 'center',
-    borderColor: '#cc0000',
-    borderWidth: 3
   },
   name: {
-    fontSize: 22,
+    fontSize: 20,
     fontWeight: 'bold',
-    textAlign: 'center',
+    color: '#fff',
+  },
+  position: {
+    color: '#fff',
+    fontSize: 10,
+  },
+  jerseyNumber: {
+    fontSize: 35,
+    fontWeight: 'bold',
     color: '#cc0000',
+  },
+  image: {
+    width: 100,
+    height: 100,
+    borderRadius: 40,
+    borderColor: '#cc0000',
+    borderWidth: 2,
+  },
+  secondSection: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    marginBottom: 10,
+    paddingBottom: 10,
+    borderBottomWidth: 1,
+    borderBottomColor: '#cc0000',
+  },
+  minutesPlayed: {
+    fontWeight: 'bold',
+    fontSize: 12,
+    color: '#fff',
+  },
+  rating: {
+    fontWeight: 'bold',
+    fontSize: 12,
+    color: '#fff',
+  },
+  thirdSection: {
     marginTop: 10,
-    marginBottom: 10
-  },
-  separator: {
-    height: 2,
-    backgroundColor: '#cc0000',
-    marginVertical: 10
-  },
-  stats: {
-    alignItems: 'center'
   },
   statRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    width: '100%',
-    marginBottom: 5
+    alignItems: 'center',
+    marginBottom: 5,
   },
-  statKey: {
-    color: '#cc0000',
-    fontSize: 16,
-    fontWeight: 'bold'
+  statText: {
+    color: '#fff',
+    fontSize: 14,
+    fontWeight: 'bold',
   },
-  statValue: {
-    color: '#cc0000',
-    fontSize: 16
-  }
+  additionalText: {
+    color: '#FFD700',
+    fontSize: 12,
+    fontWeight: 'bold',
+  },
 });
 
 export default PlayerCard;
