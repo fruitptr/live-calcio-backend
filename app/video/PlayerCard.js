@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import {
   View,
   Text,
@@ -14,9 +14,11 @@ const PlayerCard = ({ name, imageSource, stats, minutesPlayed, rating, records, 
     return value !== null ? value : 0;
   };
 
+  const [isStatsTrackerOn, setIsStatsTrackerOn] = useState(false);
+
   const getAdditionalText = (key, value) => {
     const record = records.find(record => record.stat === key);
-    if (record && replaceNullWithZero(value) >= record.value - record.threshold) {
+    if (isStatsTrackerOn && record && replaceNullWithZero(value) >= record.value - record.threshold) {
       return `${replaceNullWithZero(value)}/${record.value} OFF THE RECORD`;
     }
     return '';
@@ -50,6 +52,15 @@ const PlayerCard = ({ name, imageSource, stats, minutesPlayed, rating, records, 
 
         {/* Third Section */}
         <View style={styles.thirdSection}>
+          <View style={styles.statRow}>
+            <Text style={styles.statText}>Stats Tracker</Text>
+            <Switch
+              trackColor={{ false: '#767577', true: '#cc0000' }}
+              thumbColor={isStatsTrackerOn ? '#fff' : '#fff'}
+              value={isStatsTrackerOn}
+              onValueChange={value => setIsStatsTrackerOn(value)}
+            />
+          </View>
           {stats &&
             Object.entries(stats).map(([key, value]) => (
               <View key={key} style={styles.statRow}>
@@ -120,7 +131,6 @@ const styles = StyleSheet.create({
   secondSection: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    marginBottom: 10,
     paddingBottom: 10,
     borderBottomWidth: 1,
     borderBottomColor: '#cc0000',
@@ -136,7 +146,6 @@ const styles = StyleSheet.create({
     color: '#fff',
   },
   thirdSection: {
-    marginTop: 10,
   },
   statRow: {
     flexDirection: 'row',
