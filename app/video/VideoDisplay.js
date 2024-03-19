@@ -300,7 +300,6 @@ export default function App() {
     <View style={styles.Ucontainer}>
       <Header />
       <View style={styles.UcontentContainer}>
-        <Text style={styles.titleText}>Start analyzing football games today!</Text>
         <View style={styles.uploadTextContainer}>
           <Text style={styles.UuploadText}>Upload Video</Text>
         </View>
