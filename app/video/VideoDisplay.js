@@ -1,5 +1,5 @@
 import { StatusBar } from 'expo-status-bar';
-import { StyleSheet, View, TouchableOpacity, Text } from 'react-native';
+import { StyleSheet, Alert, View, TouchableOpacity, Text } from 'react-native';
 import * as ScreenOrientation from 'expo-screen-orientation';
 import * as ImagePicker from 'expo-image-picker';
 import { useEffect, useState, useRef } from 'react';
@@ -7,8 +7,9 @@ import { Video, ResizeMode } from 'expo-av';
 import Header from '../../Components/Header';
 import PlayerCard from './PlayerCard';
 import axios from 'axios';
-import { FIRESTORE_DB } from '../../firebaseConfig';
+import { FIRESTORE_DB, FIREBASE_STORAGE, FIREBASE_AUTH } from '../../firebaseConfig';
 import { collection, getDocs } from 'firebase/firestore';
+import { uploadBytesResumable, ref, getDownloadURL } from 'firebase/storage';
 
 export default function App() {
   const [videoURI, setVideoURI] = useState(null);
@@ -22,6 +23,7 @@ export default function App() {
   const [playerData, setPlayerData] = useState(null);
   const [jerseyNumber, setJerseyNumber] = useState(10);
   const [playerImageSource, setPlayerImageSource] = useState(require('./../../assets/playerDemo.png'));
+  const [displayPlayerCard, setDisplayPlayerCard] = useState(false);
   const positionsDict = {
     "G": "Goalkeeper",
     "D": "Defender",
@@ -83,7 +85,7 @@ export default function App() {
       mediaTypes: ImagePicker.MediaTypeOptions.Videos
     });
 
-    if (!result.cancelled && result.assets && result.assets.length > 0) {
+    if (!result.canceled && result.assets && result.assets.length > 0) {
       const video = result.assets[0];
       setVideoURI(video.uri);
       const aspectRatio = video.width / video.height;
@@ -174,6 +176,60 @@ export default function App() {
     console.log(recordsData)
   }
 
+  const handlePlayerTapped = async () => {
+    const storage = FIREBASE_STORAGE;
+    const auth = FIREBASE_AUTH;
+    const user = auth.currentUser;
+    if (!user) {
+      Alert.alert('You need to be logged in!');
+      return;
+    }
+    fetchTimezoneData();
+    const currentTime = new Date();
+    const timestamp = `${currentTime.getFullYear()}-${(currentTime.getMonth() + 1)
+      .toString()
+      .padStart(2, '0')}-${currentTime
+      .getDate()
+      .toString()
+      .padStart(2, '0')}_${currentTime
+      .getHours()
+      .toString()
+      .padStart(2, '0')}-${currentTime
+      .getMinutes()
+      .toString()
+      .padStart(2, '0')}-${currentTime.getSeconds().toString().padStart(2, '0')}`;
+
+    const fileName = `video_${timestamp}.mp4`;
+    const storageRef = ref(storage, `media/${user.uid}/${fileName}`);
+    try {
+      const response = await fetch(videoURI);
+      if (!response.ok) {
+        throw new Error(`Failed to fetch file: ${response.statusText}`);
+      }
+
+      const blob = await response.blob();
+      const upload = uploadBytesResumable(storageRef, blob);
+
+      return new Promise((resolve, reject) => {
+        upload.on('state_changed', snapshot => {
+          const progress = (snapshot.bytesTransferred / snapshot.totalBytes) * 100;
+          console.log(`Upload is ${progress}% done`);
+        }, reject, async () => {
+          const downloadURL = await getDownloadURL(upload.snapshot.ref);
+          console.log('File available at', downloadURL);
+          // Pass downloadURL to model here and the tap coordinates as well.
+          setDisplayPlayerCard(true);
+          resolve(downloadURL);
+        });
+      });
+    }
+    catch (error) {
+      console.error('Error uploading file:', error);
+      Alert.alert('Error uploading file', error.message);
+    }
+  }
+
+
   if (videoURI) {
   return (
     <View style={styles.container}>
@@ -201,6 +257,7 @@ export default function App() {
               <Text style={styles.buttonText}>Tap on a player</Text>
             </TouchableOpacity>
             <View style={styles.PlayerCardStyles}>
+              { displayPlayerCard && (
               <PlayerCard
                 name= {playerData ? playerData.player.name : "Player Name"}
                 imageSource={ playerImageSource }
@@ -222,6 +279,7 @@ export default function App() {
                 position= { playerData ? positionsDict[playerData.statistics[0].games.position] : "Position"}
                 onToggleSwitch={() => {}}
               />
+              )}
             </View>
           </View>
         )}
@@ -242,13 +300,12 @@ export default function App() {
     <View style={styles.Ucontainer}>
       <Header />
       <View style={styles.UcontentContainer}>
+        <Text style={styles.titleText}>Start analyzing football games today!</Text>
         <View style={styles.uploadTextContainer}>
-          <Text style={styles.UuploadText}>Upload</Text>
-          <Text style={styles.UuploadText}>Video</Text>
+          <Text style={styles.UuploadText}>Upload Video</Text>
         </View>
         <TouchableOpacity style={styles.uploadButton} onPress={pickVideo}>
-          <Text style={styles.UbuttonText}>Browse</Text>
-          <Text style={styles.UbuttonText}>Files</Text>
+          <Text style={styles.UbuttonText}>Browse Files</Text>
         </TouchableOpacity>
       </View>
     </View>
@@ -259,7 +316,11 @@ export default function App() {
 const styles = StyleSheet.create({
   Ucontainer: {
     flex: 1,
-    alignItems: 'center'
+  },
+  titleText: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    marginBottom: 20
   },
   UcontentContainer: {
     flex: 1,
@@ -268,13 +329,15 @@ const styles = StyleSheet.create({
     width: '100%' // Take full width
   },
   uploadButton: {
-    borderWidth: 2,
-    backgroundColor: '#cc0000',
-    width: 150,
+    borderWidth: 1,
+    borderColor: '#001000',
+    backgroundColor: '#bf0000',
+    width: '70%',
     height: 100,
-    borderRadius: 8,
+    borderRadius: 30,
     alignItems: 'center',
-    justifyContent: 'center'
+    justifyContent: 'center',
+    elevation: 3,
   },
   UbuttonText: {
     fontSize: 24,
@@ -283,7 +346,7 @@ const styles = StyleSheet.create({
   },
   UuploadText: {
     fontSize: 38,
-    color: '#cc0000',
+    color: '#bf0000',
     fontWeight: 'bold'
   },
 

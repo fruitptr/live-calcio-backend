@@ -53,7 +53,7 @@ export default function LoginForm() {
 
             <TextInput
               style={styles.input}
-              placeholder="Email or Username"
+              placeholder="Email"
               value={username}
               onChangeText={setUsername}
               autoCorrect={false}
@@ -69,7 +69,7 @@ export default function LoginForm() {
               autoCapitalize="none"
             />
             <TouchableOpacity style={styles.loginButton} onPress={handleLogin}>
-              <Text style={styles.loginButtonText}>LOGIN</Text>
+              <Text style={styles.loginButtonText}>Sign In</Text>
             </TouchableOpacity>
             <TouchableOpacity onPress={handleGoToSignup}>
               <Text style={styles.signUpText}>
@@ -85,10 +85,13 @@ export default function LoginForm() {
 
 const styles = StyleSheet.create({
   container: {
-    flex: 1
+    flex: 1,
+    backgroundColor: '#fff'
   },
   backgroundImage: {
-    flex: 1
+    flex: 1,
+    resizeMode: 'cover',
+    justifyContent: 'center'
   },
   formContainer: {
     position: 'absolute',
@@ -98,10 +101,17 @@ const styles = StyleSheet.create({
     backgroundColor: 'rgba(255, 255, 255, 0.95)',
     width: '100%',
     height: '55%',
-    paddingVertical: 40,
     paddingHorizontal: 20,
     alignItems: 'center',
-    justifyContent: 'center'
+    justifyContent: 'center',
+    shadowColor: '#000',
+    shadowOffset: {
+      width: 0,
+      height: 4
+    },
+    shadowOpacity: 0.9,
+    shadowRadius: 3.84,
+    elevation: 10
   },
   keyboardAvoidingView: {
     width: '100%'
@@ -123,7 +133,7 @@ const styles = StyleSheet.create({
     elevation: 3
   },
   loginButton: {
-    backgroundColor: '#cc0000',
+    backgroundColor: '#bf0000',
     paddingVertical: 12,
     borderRadius: 25,
     alignItems: 'center',
@@ -143,9 +153,10 @@ const styles = StyleSheet.create({
     marginTop: 16
   },
   loginImage: {
-    width: 250,
-    height: 150,
+    height: 35,
+    width: 'auto',
     resizeMode: 'contain',
-    marginLeft: 40
+    marginTop: 50,
+    marginBottom: 30,
   }
 });
