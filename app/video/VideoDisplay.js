@@ -188,6 +188,10 @@ export default function App() {
       Alert.alert('You need to be logged in!');
       return;
     }
+    if (!isLocked)
+    {
+      return;
+    }
     const locationX = event.nativeEvent.locationX;
     const locationY = event.nativeEvent.locationY;
     console.log('Tapped at:', locationX, locationY);
@@ -271,7 +275,7 @@ export default function App() {
     }
     catch (error) {
       console.error('Error uploading file:', error);
-      Alert.alert('Error uploading file', error.message);
+      Alert.alert('Error', 'Could not send file to server for processing!');
     }
   }
 
@@ -289,13 +293,13 @@ export default function App() {
           isLooping
           onTouchStart={handlePlayerTapped}
         />
+        <TouchableOpacity style={styles.button}
+            onPress={toggleLock}>
+              <Text style={styles.buttonText}>{isLocked ? 'Tap here to go back' : 'Tap here to start'}</Text>
+            </TouchableOpacity>
         {!isLocked && (
           <View style={styles.overlay}>
             <Header />
-            <TouchableOpacity style={styles.button}
-            onPress={handlePlayerTapped}>
-              <Text style={styles.buttonText}>Tap on a player</Text>
-            </TouchableOpacity>
             <View style={styles.PlayerCardStyles}>
               { displayPlayerCard && (
               <PlayerCard
@@ -323,14 +327,14 @@ export default function App() {
             </View>
           </View>
         )}
-        <TouchableOpacity
+        {/* <TouchableOpacity
           style={[styles.lockButton, { right: 10, top: 10 }]}
           onPress={toggleLock}
         >
           <Text style={styles.lockButtonText}>
             {isLocked ? 'Unlock' : 'Lock'}
           </Text>
-        </TouchableOpacity>
+        </TouchableOpacity> */}
       </View>
       <StatusBar style="auto" hidden={true} />
     </View>
