@@ -1,5 +1,5 @@
 import { StatusBar } from 'expo-status-bar';
-import { StyleSheet, Alert, View, TouchableOpacity, Text } from 'react-native';
+import { StyleSheet, Alert, View, TouchableOpacity, Text, Dimensions } from 'react-native';
 import * as ScreenOrientation from 'expo-screen-orientation';
 import * as ImagePicker from 'expo-image-picker';
 import { useEffect, useState, useRef } from 'react';
@@ -14,6 +14,8 @@ import { uploadBytesResumable, ref, getDownloadURL } from 'firebase/storage';
 export default function App() {
   const [videoURI, setVideoURI] = useState(null);
   const [aspectRatio, setAspectRatio] = useState(16 / 9);
+  const [origVideoWidth, setVideoWidth] = useState(0);
+  const [origVideoHeight, setVideoHeight] = useState(0);
   const [orientation, setOrientation] = useState(1);
   const [isLocked, setIsLocked] = useState(false);
   const video = useRef(null);
@@ -89,6 +91,8 @@ export default function App() {
       const video = result.assets[0];
       setVideoURI(video.uri);
       const aspectRatio = video.width / video.height;
+      setVideoWidth(video.width);
+      setVideoHeight(video.height);
       setAspectRatio(aspectRatio);
       console.log(video.uri);
     }
@@ -176,7 +180,7 @@ export default function App() {
     console.log(recordsData)
   }
 
-  const handlePlayerTapped = async () => {
+  const handlePlayerTapped = async (event) => {
     const storage = FIREBASE_STORAGE;
     const auth = FIREBASE_AUTH;
     const user = auth.currentUser;
@@ -184,6 +188,48 @@ export default function App() {
       Alert.alert('You need to be logged in!');
       return;
     }
+    const locationX = event.nativeEvent.locationX;
+    const locationY = event.nativeEvent.locationY;
+    console.log('Tapped at:', locationX, locationY);
+    const { width, height } = Dimensions.get('window');
+    console.log("Device Width:", width);
+    console.log("Device Height:", height);
+    const deviceAspectRatio = width / height;
+    console.log("Device Aspect Ratio:", deviceAspectRatio)
+    if (deviceAspectRatio < aspectRatio) {
+      const expectedVideoHeight = width / aspectRatio; // Calculate expected video height based on device width and video aspect ratio
+      const blackBarHeight = (height - expectedVideoHeight) / 2; // Divide the remaining height (after fitting video width) by 2 for top and bottom bars
+      console.log("Estimated Black Bar Height (Top & Bottom):", blackBarHeight);
+      const tapX = locationX;
+      const tapY = locationY - blackBarHeight;
+      if (tapX < 0 || tapY < 0 || tapX > width || tapY > expectedVideoHeight) {
+        console.log("Tapped outside the video area!");
+        return;
+      }
+      console.log("Adjusted Tap X:", tapX);
+      console.log("Adjusted Tap Y:", tapY);
+      const XCoordOfOrigVideo = tapX * (origVideoWidth / width);
+      const YCoordOfOrigVideo = tapY * (origVideoHeight / expectedVideoHeight);
+      console.log("Original Video X Coordinate:", XCoordOfOrigVideo);
+      console.log("Original Video Y Coordinate:", YCoordOfOrigVideo);
+    } else {
+      const expectedVideoWidth = height * aspectRatio; // Calculate expected video width based on device height and video aspect ratio
+      const blackBarWidth = (width - expectedVideoWidth) / 2; // Divide the remaining width (after fitting video height) by 2 for left and right bars
+      console.log("Estimated Black Bar Width (Left & Right):", blackBarWidth);
+      const tapX = locationX - blackBarWidth;
+      const tapY = locationY;
+      if (tapX < 0 || tapY < 0 || tapX > expectedVideoWidth || tapY > height) {
+        console.log("Tapped outside the video area!");
+        return;
+      }
+      console.log("Adjusted Tap X:", tapX);
+      console.log("Adjusted Tap Y:", tapY);
+      const XCoordOfOrigVideo = tapX * (origVideoWidth / expectedVideoWidth);
+      const YCoordOfOrigVideo = tapY * (origVideoHeight / height);
+      console.log("Original Video X Coordinate:", XCoordOfOrigVideo);
+      console.log("Original Video Y Coordinate:", YCoordOfOrigVideo);
+    }
+    return;
     fetchTimezoneData();
     const currentTime = new Date();
     const timestamp = `${currentTime.getFullYear()}-${(currentTime.getMonth() + 1)
@@ -241,13 +287,7 @@ export default function App() {
           useNativeControls
           resizeMode={ResizeMode.CONTAIN}
           isLooping
-          onTouchStart={
-            isLocked
-              ? () => {
-                  video.current.pauseAsync();
-                }
-              : null
-          }
+          onTouchStart={handlePlayerTapped}
         />
         {!isLocked && (
           <View style={styles.overlay}>
