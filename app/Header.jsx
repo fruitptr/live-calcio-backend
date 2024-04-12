@@ -5,7 +5,7 @@ import { router } from 'expo-router';
 
 export default function Header() {
   const gotoProfileScreen = () => {
-    router.push('../app/account/SettingsScreen')
+    router.push('./../account/SettingsScreen')
     console.log("Profile Screen")
   }
   return (

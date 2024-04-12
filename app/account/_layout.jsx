@@ -4,13 +4,11 @@ export default function Layout() {
   return (
     <Stack
       screenOptions={{
+        headerTitle: '',
         headerStyle: {
-          backgroundColor: '#f4511e'
+          backgroundColor: '#bf0000'
         },
         headerTintColor: '#fff',
-        headerTitleStyle: {
-          fontWeight: 'bold'
-        }
       }}
     />
   );

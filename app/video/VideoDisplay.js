@@ -4,7 +4,7 @@ import * as ScreenOrientation from 'expo-screen-orientation';
 import * as ImagePicker from 'expo-image-picker';
 import { useEffect, useState, useRef } from 'react';
 import { Video, ResizeMode } from 'expo-av';
-import Header from '../../Components/Header';
+import Header from '../Header';
 import PlayerCard from './PlayerCard';
 import axios from 'axios';
 import { FIRESTORE_DB, FIREBASE_STORAGE, FIREBASE_AUTH } from '../../firebaseConfig';
