@@ -184,6 +184,8 @@ export default function App() {
     const storage = FIREBASE_STORAGE;
     const auth = FIREBASE_AUTH;
     const user = auth.currentUser;
+    let XCoordOfOrigVideo = 0;
+    let YCoordOfOrigVideo = 0;
     if (!user) {
       Alert.alert('You need to be logged in!');
       return;
@@ -212,8 +214,8 @@ export default function App() {
       }
       console.log("Adjusted Tap X:", tapX);
       console.log("Adjusted Tap Y:", tapY);
-      const XCoordOfOrigVideo = tapX * (origVideoWidth / width);
-      const YCoordOfOrigVideo = tapY * (origVideoHeight / expectedVideoHeight);
+      XCoordOfOrigVideo = tapX * (origVideoWidth / width);
+      YCoordOfOrigVideo = tapY * (origVideoHeight / expectedVideoHeight);
       console.log("Original Video X Coordinate:", XCoordOfOrigVideo);
       console.log("Original Video Y Coordinate:", YCoordOfOrigVideo);
     } else {
@@ -228,12 +230,11 @@ export default function App() {
       }
       console.log("Adjusted Tap X:", tapX);
       console.log("Adjusted Tap Y:", tapY);
-      const XCoordOfOrigVideo = tapX * (origVideoWidth / expectedVideoWidth);
-      const YCoordOfOrigVideo = tapY * (origVideoHeight / height);
+      XCoordOfOrigVideo = tapX * (origVideoWidth / expectedVideoWidth);
+      YCoordOfOrigVideo = tapY * (origVideoHeight / height);
       console.log("Original Video X Coordinate:", XCoordOfOrigVideo);
       console.log("Original Video Y Coordinate:", YCoordOfOrigVideo);
     }
-    return;
     fetchTimezoneData();
     const currentTime = new Date();
     const timestamp = `${currentTime.getFullYear()}-${(currentTime.getMonth() + 1)
@@ -267,9 +268,49 @@ export default function App() {
         }, reject, async () => {
           const downloadURL = await getDownloadURL(upload.snapshot.ref);
           console.log('File available at', downloadURL);
-          // Pass downloadURL to model here and the tap coordinates as well.
-          setDisplayPlayerCard(true);
-          resolve(downloadURL);
+          const xInt = Math.round(XCoordOfOrigVideo);
+          const yInt = Math.round(YCoordOfOrigVideo);
+          console.log("X Coordinate:", xInt);
+          console.log("Y Coordinate:", yInt);
+          const requestData = {
+            video: downloadURL,
+            x: xInt,
+            y: yInt,
+          };
+          console.log("REQUEST DATA: ", requestData)
+          try {
+            // Make POST request
+            const response = await fetch('https://131a-35-199-159-42.ngrok-free.app/predict/', {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json',
+              },
+              body: JSON.stringify(requestData),
+            });
+        
+            if (!response.ok) {
+              throw new Error(`Failed to send data: ${response.statusText}`);
+            }
+        
+            const responseData = await response.json();
+            console.log(responseData)
+        
+            if (responseData.jersey_number !== 'Not a player') {
+              // Set the jersey number
+              const jerseyNumberResponse = responseData.jersey_number;
+              console.log(jerseyNumberResponse);
+              setJerseyNumber(jerseyNumberResponse);
+            } else {
+              console.log('Response is "Not a player"');
+            }
+            
+            setDisplayPlayerCard(true);
+            resolve(downloadURL);
+        
+          } catch (error) {
+            console.error('Error sending data:', error);
+            Alert.alert('Error', error.message);
+          }
         });
       });
     }
