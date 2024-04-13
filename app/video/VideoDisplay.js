@@ -13,9 +13,6 @@ import { uploadBytesResumable, ref, getDownloadURL } from 'firebase/storage';
 import { useFocusEffect } from '@react-navigation/native';
 import { doc, getDoc } from 'firebase/firestore';
 import MaterialIcons from 'react-native-vector-icons/MaterialIcons';
-import * as FFmpegKit from 'ffmpeg-kit-react-native';
-import * as FileSystem from 'expo-file-system';
-import * as MediaLibrary from 'expo-media-library';
 
 export default function App() {
   const [videoURI, setVideoURI] = useState(null);
@@ -242,6 +239,10 @@ export default function App() {
   };
 
   const handlePlayerTapped = async (event) => {
+    const currentStatus = await video.current.getStatusAsync();
+    const currentPosition = currentStatus.positionMillis;
+    console.log("Current Position: ", currentPosition);
+    //NOW WE NEED TO SUBTRACT -3000 FROM THE CURRENT POSITION TO GET THE CORRECT TIME FOR TRIMMING
     const storage = FIREBASE_STORAGE;
     const auth = FIREBASE_AUTH;
     const user = auth.currentUser;
@@ -283,24 +284,6 @@ export default function App() {
       console.log("Original Video X Coordinate:", XCoordOfOrigVideo);
       console.log("Original Video Y Coordinate:", YCoordOfOrigVideo);
     }
-    const currentPosition = await video.current.getStatusAsync().positionMillis;
-    const startTime = currentPosition - 3 < 0 ? 0 : currentPosition - 3;
-    const endTime = currentPosition;
-
-    const outputFilePath = `${FileSystem.documentDirectory}trimmedVideo.mp4`;
-
-    try {
-      // Execute FFmpeg command to trim the video
-      await FFmpegKit.executeAsync(`-i ${videoURI} -ss ${startTime} -to ${endTime} -c copy ${outputFilePath}`);
-  
-      // Save the trimmed video to the device's gallery
-      await MediaLibrary.saveToLibraryAsync(outputFilePath);
-  
-    } catch (error) {
-      console.error('Error trimming video:', error);
-      Alert.alert('Error', 'Failed to trim video!');
-      return;
-    }
     const currentTime = new Date();
     const timestamp = `${currentTime.getFullYear()}-${(currentTime.getMonth() + 1)
       .toString()
@@ -317,8 +300,13 @@ export default function App() {
 
     const fileName = `video_${timestamp}.mp4`;
     const storageRef = ref(storage, `media/${user.uid}/${fileName}`);
+    // REMOVE THESE 3 LINES BEFORE PRODUCTION!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+    fetchTimezoneData();
+    setDisplayPlayerCard(true);
+    setIsLocked(false);
+    return;
     try {
-      const response = await fetch(outputFilePath);
+      const response = await fetch(videoURI);
       if (!response.ok) {
         throw new Error(`Failed to fetch file: ${response.statusText}`);
       }

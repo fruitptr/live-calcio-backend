@@ -25,7 +25,6 @@
       "favicon": "./assets/favicon.png"
     },
     "plugins": [
-      "@config-plugins/ffmpeg-kit-react-native",
       [
         "expo-image-picker",
         {
