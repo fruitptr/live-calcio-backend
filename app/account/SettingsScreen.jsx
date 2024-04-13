@@ -1,11 +1,12 @@
 import React, {useEffect, useState} from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, Image, Modal, TextInput, ScrollView, Alert } from 'react-native';
-import Icon from 'react-native-vector-icons/MaterialIcons'; // You can choose the appropriate icon set
+import Icon from 'react-native-vector-icons/MaterialIcons';
 import { FIREBASE_AUTH } from '../../firebaseConfig';
 import { signOut, onAuthStateChanged, reauthenticateWithCredential, updatePassword, EmailAuthProvider } from 'firebase/auth';
 import { doc, updateDoc, getDoc } from 'firebase/firestore';
 import {FIRESTORE_DB} from '../../firebaseConfig';
 import { router } from 'expo-router';
+import * as ScreenOrientation from 'expo-screen-orientation';
 
 const SettingsScreen = () => {
   const auth = FIREBASE_AUTH;
@@ -25,9 +26,15 @@ const SettingsScreen = () => {
     }
   };
 
+
   useEffect(() => {
     initializeUser();
     initializeSubscription();
+    ScreenOrientation.lockAsync(ScreenOrientation.OrientationLock.PORTRAIT_UP);
+    
+    return () => {
+      ScreenOrientation.unlockAsync();
+    };
   }, []);
 
   const initializeSubscription = async () => {
@@ -42,6 +49,11 @@ const SettingsScreen = () => {
     }
   };
 
+  const isPasswordValid = (password) => {
+    const passwordRegex = /^(?=.*[A-Za-z])(?=.*\d)(?=.*[@$!%*#?&])[A-Za-z\d@$!%*#?&]{8,}$/;
+    return passwordRegex.test(password);
+  };
+
   const handleSaveChanges = async () => {
     const userDoc = doc(db, 'users', auth.currentUser.uid);
     await updateDoc(userDoc, {
@@ -54,6 +66,15 @@ const SettingsScreen = () => {
   const handleChangePassword = async () => {
     const user = auth.currentUser;
     const credentials = EmailAuthProvider.credential(user.email, currentPassword);
+
+    if (!isPasswordValid(newPassword)) {
+      Alert.alert(
+        'Invalid Password',
+        'Password must be 8 or more characters long, contain at least one number, and one symbol.'
+      );
+      return;
+    }
+
     reauthenticateWithCredential(user, credentials).then(() => {
       updatePassword(user, newPassword).then(() => {
         console.log('Password updated successfully!');
@@ -143,7 +164,9 @@ const SettingsScreen = () => {
           >
             <Text style={styles.subscriptionHeader}>B Tier - Rs. 1,500/month</Text>
             <Text>Access to goals, assists, shots, passes.</Text>
-            <Text>Access to stats tracker</Text>
+            <Text>Access to advanced statistics.
+            </Text>
+            <Text>No access to stats tracker</Text>
           </TouchableOpacity>
           <TouchableOpacity
             style={[

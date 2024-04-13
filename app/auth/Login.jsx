@@ -13,6 +13,7 @@ import {
   View,
   Image
 } from 'react-native';
+import * as ScreenOrientation from 'expo-screen-orientation';
 import { router } from 'expo-router';
 import { signInWithEmailAndPassword } from 'firebase/auth';
 const backgroundImage = require('./../../assets/loginbg1.png');
@@ -21,6 +22,14 @@ export default function LoginForm() {
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
   const auth = FIREBASE_AUTH;
+
+  useEffect(() => {
+    ScreenOrientation.lockAsync(ScreenOrientation.OrientationLock.PORTRAIT_UP);
+    
+    return () => {
+      ScreenOrientation.unlockAsync();
+    };
+  }, []);
 
   const handleLogin = async () => {
     try {

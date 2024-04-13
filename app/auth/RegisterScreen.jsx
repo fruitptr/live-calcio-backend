@@ -24,8 +24,19 @@ const RegisterScreen = () => {
   const auth = FIREBASE_AUTH;
   const db = FIRESTORE_DB;
 
-  // This function would handle the user registration
+  const isPasswordValid = (password) => {
+    const passwordRegex = /^(?=.*[A-Za-z])(?=.*\d)(?=.*[@$!%*#?&])[A-Za-z\d@$!%*#?&]{8,}$/;
+    return passwordRegex.test(password);
+  };
+
   const handleRegister = async () => {
+    if (!isPasswordValid(password)) {
+      Alert.alert(
+        'Invalid Password',
+        'Password must be 8 or more characters long, contain at least one number, and one symbol.'
+      );
+      return;
+    }
     try {
       const response = await createUserWithEmailAndPassword(auth, email, password);
       console.log('User registered successfully!', response);
@@ -46,7 +57,7 @@ const RegisterScreen = () => {
 
   return (
     <ImageBackground
-      source={require('./../../assets/bgImg1.jpg')} // Replace with your background image
+      source={require('./../../assets/bgImg1.jpg')}
       style={styles.background}
     >
       <KeyboardAvoidingView

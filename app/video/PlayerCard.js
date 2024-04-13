@@ -9,12 +9,15 @@ import {
   TouchableOpacity
 } from 'react-native';
 
-const PlayerCard = ({ name, imageSource, stats, minutesPlayed, rating, records, jerseyNumber, position, onToggleSwitch }) => {
+const PlayerCard = ({ name, imageSource, stats, minutesPlayed, rating, records, jerseyNumber, position, onToggleSwitch, subscription }) => {
   const replaceNullWithZero = value => {
     return value !== null ? value : 0;
   };
 
   const [isStatsTrackerOn, setIsStatsTrackerOn] = useState(false);
+
+  const isSubscriptionOne = subscription === 1;
+  const isSubscriptionTwo = subscription === 2;
 
   const getAdditionalText = (key, value) => {
     const record = records.find(record => record.stat === key);
@@ -30,48 +33,54 @@ const PlayerCard = ({ name, imageSource, stats, minutesPlayed, rating, records, 
       showsVerticalScrollIndicator={false}
     >
       <View style={styles.card}>
-        {/* First Section */}
         <View style={styles.firstSection}>
-          {/* Left Column */}
           <View style={styles.leftColumn}>
             <Text style={styles.name}>{name}</Text>
             <Text style={styles.position}>{position}</Text>
             <Text style={styles.jerseyNumber}>{jerseyNumber}</Text>
           </View>
-          {/* Right Column */}
           <View style={styles.rightColumn}>
             <Image source={imageSource} style={styles.image} />
           </View>
         </View>
 
-        {/* Second Section */}
         <View style={styles.secondSection}>
           <Text style={styles.minutesPlayed}>Minutes Played: {minutesPlayed}'</Text>
           <Text style={styles.rating}>Rating: {rating}</Text>
         </View>
 
-        {/* Third Section */}
         <View style={styles.thirdSection}>
           <View style={styles.statRow}>
-            <Text style={styles.statText}>Stats Tracker</Text>
+          <Text style={isSubscriptionTwo ? styles.statText : styles.disabledStatText}>Stats Tracker</Text>
             <Switch
               trackColor={{ false: '#767577', true: '#cc0000' }}
               thumbColor={isStatsTrackerOn ? '#fff' : '#fff'}
               value={isStatsTrackerOn}
               onValueChange={value => setIsStatsTrackerOn(value)}
+              disabled={!isSubscriptionTwo}
+              style={isSubscriptionTwo ? null : styles.disabledSwitch}
             />
           </View>
           {stats &&
-            Object.entries(stats).map(([key, value]) => (
-              <View key={key} style={styles.statRow}>
-                <Text style={styles.statText}>
-                  {key.charAt(0).toUpperCase() + key.slice(1)}: {replaceNullWithZero(value)}
-                </Text>
-                <Text style={styles.additionalText}>
-                  {getAdditionalText(key, value)}
-                </Text>
-              </View>
-            ))}
+            Object.entries(stats).map(([key, value]) => {
+              if (
+                (subscription === 0 && ['goals', 'assists', 'shots', 'passes'].includes(key)) ||
+                (subscription === 1) ||
+                (subscription === 2)
+              ) {
+                return (
+                  <View key={key} style={styles.statRow}>
+                    <Text style={styles.statText}>
+                      {key.charAt(0).toUpperCase() + key.slice(1)}: {replaceNullWithZero(value)}
+                    </Text>
+                    <Text style={styles.additionalText}>
+                      {getAdditionalText(key, value)}
+                    </Text>
+                  </View>
+                );
+              }
+              return null;
+            })}
         </View>
       </View>
     </ScrollView>
@@ -162,6 +171,14 @@ const styles = StyleSheet.create({
     color: '#FFD700',
     fontSize: 12,
     fontWeight: 'bold',
+  },
+  disabledStatText: {
+    color: '#767577',
+    fontSize: 14,
+    fontWeight: 'bold',
+  },
+  disabledSwitch: {
+    opacity: 0.5,
   },
 });
 

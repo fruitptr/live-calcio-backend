@@ -2,7 +2,7 @@ import { StatusBar } from 'expo-status-bar';
 import { StyleSheet, Alert, View, TouchableOpacity, Text, Dimensions } from 'react-native';
 import * as ScreenOrientation from 'expo-screen-orientation';
 import * as ImagePicker from 'expo-image-picker';
-import { useEffect, useState, useRef } from 'react';
+import { useEffect, useState, useRef, useCallback } from 'react';
 import { Video, ResizeMode } from 'expo-av';
 import Header from '../Header';
 import PlayerCard from './PlayerCard';
@@ -10,6 +10,9 @@ import axios from 'axios';
 import { FIRESTORE_DB, FIREBASE_STORAGE, FIREBASE_AUTH } from '../../firebaseConfig';
 import { collection, getDocs } from 'firebase/firestore';
 import { uploadBytesResumable, ref, getDownloadURL } from 'firebase/storage';
+import { useFocusEffect } from '@react-navigation/native';
+import { doc, getDoc } from 'firebase/firestore';
+import MaterialIcons from 'react-native-vector-icons/MaterialIcons';
 
 export default function App() {
   const [videoURI, setVideoURI] = useState(null);
@@ -26,6 +29,7 @@ export default function App() {
   const [jerseyNumber, setJerseyNumber] = useState(10);
   const [playerImageSource, setPlayerImageSource] = useState(require('./../../assets/playerDemo.png'));
   const [displayPlayerCard, setDisplayPlayerCard] = useState(false);
+  const [selectedSubscription, setSelectedSubscription] = useState(0);
   const positionsDict = {
     "G": "Goalkeeper",
     "D": "Defender",
@@ -61,19 +65,65 @@ export default function App() {
     9: 908,
     47: 163054,
   };
+  const auth = FIREBASE_AUTH;
   const db = FIRESTORE_DB;
   const [recordsData, setRecordsData] = useState(null);
 
-  useEffect(() => {
-    // lockOrientation();
-    // fetchTimezoneData();
-  }, []);
+  useFocusEffect(
+    useCallback(() => {
+      const lockOrientation = async () => {
+        if (!videoURI) {
+          await ScreenOrientation.lockAsync(
+            ScreenOrientation.OrientationLock.PORTRAIT_UP
+          );
+        } else {
+          await ScreenOrientation.lockAsync(
+            ScreenOrientation.OrientationLock.LANDSCAPE_RIGHT
+          );
+        }
+      };
+  
+      lockOrientation();
+  
+      return () => {
+        ScreenOrientation.unlockAsync();
+      };
+    }, [videoURI])
+  );
 
   useEffect(() => {
-    if (videoURI) {
-      lockOrientation();
+    if (!videoURI) {
+      lockPortraitOrientation();
+    } else {
+      lockLandscapeOrientation();
     }
+
+    return () => {
+      ScreenOrientation.unlockAsync();
+    };
   }, [videoURI]);
+
+  const lockPortraitOrientation = async () => {
+    await ScreenOrientation.lockAsync(
+      ScreenOrientation.OrientationLock.PORTRAIT_UP
+    );
+  };
+
+  const lockLandscapeOrientation = async () => {
+    await ScreenOrientation.lockAsync(
+      ScreenOrientation.OrientationLock.LANDSCAPE_RIGHT
+    );
+  };
+
+  useEffect(() => {
+    initializeSubscription();
+  }, []);
+
+  // useEffect(() => {
+  //   if (videoURI) {
+  //     lockOrientation();
+  //   }
+  // }, [videoURI]);
 
   const pickVideo = async () => {
     const permissionResult =
@@ -98,14 +148,6 @@ export default function App() {
     }
   };
 
-  const lockOrientation = async () => {
-    await ScreenOrientation.lockAsync(
-      ScreenOrientation.OrientationLock.LANDSCAPE_RIGHT
-    );
-    const o = await ScreenOrientation.getOrientationAsync();
-    setOrientation(o);
-  };
-
   const toggleLock = () => {
     setIsLocked(!isLocked);
   };
@@ -116,7 +158,7 @@ export default function App() {
       url: 'https://api-football-v1.p.rapidapi.com/v3/fixtures',
       params: { season: '2023', team: '33', last: '1' },
       headers: {
-        'X-RapidAPI-Key': 'e048552a78msh52ac7abb72eaaacp1b80f8jsn1b5155fdbf5f',
+        'X-RapidAPI-Key': process.env.EXPO_PUBLIC_RAPID_API_KEY,
         'X-RapidAPI-Host': 'api-football-v1.p.rapidapi.com'
       }
     };
@@ -140,7 +182,7 @@ export default function App() {
       url: 'https://api-football-v1.p.rapidapi.com/v3/fixtures/players',
       params: { fixture: fixtureId, team: '33' },
       headers: {
-        'X-RapidAPI-Key': 'e048552a78msh52ac7abb72eaaacp1b80f8jsn1b5155fdbf5f',
+        'X-RapidAPI-Key': process.env.EXPO_PUBLIC_RAPID_API_KEY,
         'X-RapidAPI-Host': 'api-football-v1.p.rapidapi.com'
       }
     };
@@ -180,6 +222,22 @@ export default function App() {
     console.log(recordsData)
   }
 
+  const initializeSubscription = async () => {
+    const user = auth.currentUser;
+    console.log('User ID:', user.uid);
+    console.log('db', db)
+    const userRef = doc(db, 'users', user.uid);
+    const userSnap = await getDoc(userRef);
+    if (userSnap.exists()) {
+      setSelectedSubscription(userSnap.data().subscription);
+      console.log('Subscription level initialized successfully!', userSnap.data().subscription);
+    }
+  };
+
+  const closePlayerCard = () => {
+    setDisplayPlayerCard(false);
+  };
+
   const handlePlayerTapped = async (event) => {
     const storage = FIREBASE_STORAGE;
     const auth = FIREBASE_AUTH;
@@ -196,46 +254,32 @@ export default function App() {
     }
     const locationX = event.nativeEvent.locationX;
     const locationY = event.nativeEvent.locationY;
-    console.log('Tapped at:', locationX, locationY);
     const { width, height } = Dimensions.get('window');
-    console.log("Device Width:", width);
-    console.log("Device Height:", height);
     const deviceAspectRatio = width / height;
-    console.log("Device Aspect Ratio:", deviceAspectRatio)
     if (deviceAspectRatio < aspectRatio) {
-      const expectedVideoHeight = width / aspectRatio; // Calculate expected video height based on device width and video aspect ratio
-      const blackBarHeight = (height - expectedVideoHeight) / 2; // Divide the remaining height (after fitting video width) by 2 for top and bottom bars
-      console.log("Estimated Black Bar Height (Top & Bottom):", blackBarHeight);
+      const expectedVideoHeight = width / aspectRatio;
+      const blackBarHeight = (height - expectedVideoHeight) / 2;
       const tapX = locationX;
       const tapY = locationY - blackBarHeight;
       if (tapX < 0 || tapY < 0 || tapX > width || tapY > expectedVideoHeight) {
-        console.log("Tapped outside the video area!");
         return;
       }
-      console.log("Adjusted Tap X:", tapX);
-      console.log("Adjusted Tap Y:", tapY);
       XCoordOfOrigVideo = tapX * (origVideoWidth / width);
       YCoordOfOrigVideo = tapY * (origVideoHeight / expectedVideoHeight);
-      console.log("Original Video X Coordinate:", XCoordOfOrigVideo);
-      console.log("Original Video Y Coordinate:", YCoordOfOrigVideo);
     } else {
-      const expectedVideoWidth = height * aspectRatio; // Calculate expected video width based on device height and video aspect ratio
-      const blackBarWidth = (width - expectedVideoWidth) / 2; // Divide the remaining width (after fitting video height) by 2 for left and right bars
-      console.log("Estimated Black Bar Width (Left & Right):", blackBarWidth);
+      const expectedVideoWidth = height * aspectRatio;
+      const blackBarWidth = (width - expectedVideoWidth) / 2;
       const tapX = locationX - blackBarWidth;
       const tapY = locationY;
       if (tapX < 0 || tapY < 0 || tapX > expectedVideoWidth || tapY > height) {
         console.log("Tapped outside the video area!");
         return;
       }
-      console.log("Adjusted Tap X:", tapX);
-      console.log("Adjusted Tap Y:", tapY);
       XCoordOfOrigVideo = tapX * (origVideoWidth / expectedVideoWidth);
       YCoordOfOrigVideo = tapY * (origVideoHeight / height);
       console.log("Original Video X Coordinate:", XCoordOfOrigVideo);
       console.log("Original Video Y Coordinate:", YCoordOfOrigVideo);
     }
-    fetchTimezoneData();
     const currentTime = new Date();
     const timestamp = `${currentTime.getFullYear()}-${(currentTime.getMonth() + 1)
       .toString()
@@ -252,6 +296,11 @@ export default function App() {
 
     const fileName = `video_${timestamp}.mp4`;
     const storageRef = ref(storage, `media/${user.uid}/${fileName}`);
+    // REMOVE THESE 3 LINES BEFORE PRODUCTION!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+    fetchTimezoneData();
+    setDisplayPlayerCard(true);
+    setIsLocked(false);
+    return;
     try {
       const response = await fetch(videoURI);
       if (!response.ok) {
@@ -279,8 +328,8 @@ export default function App() {
           };
           console.log("REQUEST DATA: ", requestData)
           try {
-            // Make POST request
-            const response = await fetch('https://131a-35-199-159-42.ngrok-free.app/predict/', {
+            //IF YOU ENCOUNTER ISSUE, IT MAY BE DUE TO THE MAGIC STRING BELOW. JUST PASTE THE URL INSTEAD AS A STRING
+            const response = await fetch(`${process.env.EXPO_PUBLIC_MODEL_API_URL}`, {
               method: 'POST',
               headers: {
                 'Content-Type': 'application/json',
@@ -296,15 +345,16 @@ export default function App() {
             console.log(responseData)
         
             if (responseData.jersey_number !== 'Not a player') {
-              // Set the jersey number
               const jerseyNumberResponse = responseData.jersey_number;
               console.log(jerseyNumberResponse);
               setJerseyNumber(jerseyNumberResponse);
+              fetchTimezoneData();
             } else {
               console.log('Response is "Not a player"');
             }
             
             setDisplayPlayerCard(true);
+            setIsLocked(false);
             resolve(downloadURL);
         
           } catch (error) {
@@ -336,8 +386,22 @@ export default function App() {
         />
         <TouchableOpacity style={styles.button}
             onPress={toggleLock}>
-              <Text style={styles.buttonText}>{isLocked ? 'Tap here to go back' : 'Tap here to start'}</Text>
+              <View style={styles.buttonContent}>
+                <MaterialIcons name="info-outline" style={styles.icon} />
+
+                <Text style={styles.buttonText}>
+                  {isLocked ? 'Tap here to go back' : 'Tap here to start'}
+                </Text>
+              </View>
             </TouchableOpacity>
+            {displayPlayerCard && (
+              <TouchableOpacity style={styles.closeButton} onPress={closePlayerCard}>
+                  <View style={styles.buttonContent}>
+                    <MaterialIcons name="close" style={styles.icon} />
+                    <Text style={styles.closeButtonText}>Close card</Text>
+                  </View>
+              </TouchableOpacity>
+            )}
         {!isLocked && (
           <View style={styles.overlay}>
             <Header />
@@ -363,19 +427,12 @@ export default function App() {
                 jerseyNumber={jerseyNumber}
                 position= { playerData ? positionsDict[playerData.statistics[0].games.position] : "Position"}
                 onToggleSwitch={() => {}}
+                subscription={selectedSubscription}
               />
               )}
             </View>
           </View>
         )}
-        {/* <TouchableOpacity
-          style={[styles.lockButton, { right: 10, top: 10 }]}
-          onPress={toggleLock}
-        >
-          <Text style={styles.lockButtonText}>
-            {isLocked ? 'Unlock' : 'Lock'}
-          </Text>
-        </TouchableOpacity> */}
       </View>
       <StatusBar style="auto" hidden={true} />
     </View>
@@ -408,9 +465,9 @@ const styles = StyleSheet.create({
   },
   UcontentContainer: {
     flex: 1,
-    justifyContent: 'center', // Center content vertically
-    alignItems: 'center', // Center content horizontally
-    width: '100%' // Take full width
+    justifyContent: 'center',
+    alignItems: 'center',
+    width: '100%'
   },
   uploadButton: {
     borderWidth: 1,
@@ -437,7 +494,7 @@ const styles = StyleSheet.create({
   uploadTextContainer: {
     alignItems: 'center',
     justifyContent: 'center',
-    marginBottom: 30 // Add margin for better spacing
+    marginBottom: 30
   },
   container: {
     flex: 1,
@@ -459,13 +516,39 @@ const styles = StyleSheet.create({
     ...StyleSheet.absoluteFillObject,
     justifyContent: 'flex-start'
   },
+  buttonContent: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  icon: {
+    fontSize: 20,
+    color: '#bf0000',
+    marginRight: 7,
+  },
+  closeButton: {
+    position: 'absolute',
+    top: 120,
+    right: 20,
+    backgroundColor: 'white',
+    padding: 10,
+    borderRadius: 5,
+    borderWidth: 1,
+    borderColor: '#bf0000',
+  },
+  closeButtonText: {
+    color: 'black',
+    fontWeight: 'bold',
+    fontSize: 14,
+  },
   button: {
     position: 'absolute',
     top: 70,
     right: 20,
     backgroundColor: 'white',
     padding: 10,
-    borderRadius: 5
+    borderRadius: 5,
+    borderWidth: 1,
+    borderColor: '#bf0000',
   },
   buttonText: {
     color: 'black',

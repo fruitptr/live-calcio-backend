@@ -9,18 +9,18 @@ const SplashScreen = () => {
     Animated.loop(
       Animated.sequence([
         Animated.timing(fadeAnim, {
-          toValue: 0.2, // Semi-transparent
+          toValue: 0.5,
           duration: 1000,
           useNativeDriver: true
         }),
         Animated.timing(fadeAnim, {
-          toValue: 1, // Fully opaque
+          toValue: 1,
           duration: 1000,
           useNativeDriver: true
         })
       ]),
       {
-        iterations: 2 // Blink twice
+        iterations: 2
       }
     ).start();
 
