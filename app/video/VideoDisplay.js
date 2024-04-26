@@ -30,6 +30,7 @@ export default function App() {
   const [playerImageSource, setPlayerImageSource] = useState(require('./../../assets/playerDemo.png'));
   const [displayPlayerCard, setDisplayPlayerCard] = useState(false);
   const [selectedSubscription, setSelectedSubscription] = useState(0);
+  const [isLoading, setIsLoading] = useState(false);
   const positionsDict = {
     "G": "Goalkeeper",
     "D": "Defender",
@@ -204,8 +205,8 @@ export default function App() {
     }
   };
 
-  const findPlayerData = async (playersData, jerseyNumber) => {
-    const playerId = playerDict[jerseyNumber];
+  const findPlayerData = async (playersData, jerseyNumberToFind) => {
+    const playerId = playerDict[jerseyNumberToFind];
     console.log("Player ID: ", playerId)
     console.log(playersData)
     const player = playersData.find(player => player.player.id === playerId);
@@ -311,6 +312,8 @@ export default function App() {
     // setDisplayPlayerCard(true);
     // setIsLocked(false);
     // return;
+    setIsLocked(false);
+    setIsLoading(true);
     try {
       const response = await fetch(videoURI);
       if (!response.ok) {
@@ -340,7 +343,7 @@ export default function App() {
           console.log("REQUEST DATA: ", requestData)
           try {
             //IF YOU ENCOUNTER ISSUE, IT MAY BE DUE TO THE MAGIC STRING BELOW. JUST PASTE THE URL INSTEAD AS A STRING
-            const response = await fetch('https://af17-35-243-221-203.ngrok-free.app/predict/', {
+            const response = await fetch('https://a0e6-35-243-221-203.ngrok-free.app/predict/', {
               method: 'POST',
               headers: {
                 'Content-Type': 'application/json',
@@ -359,13 +362,16 @@ export default function App() {
               const jerseyNumberResponse = responseData.jersey_number;
               console.log(jerseyNumberResponse);
               setJerseyNumber(jerseyNumberResponse);
+              console.log("FROM STATE: ", jerseyNumber)
               fetchTimezoneData();
             } else {
               console.log('Response is "Not a player"');
+              Alert.alert('Error', 'No player detected in the tapped area!');
             }
             
+            setIsLoading(false);
             setDisplayPlayerCard(true);
-            setIsLocked(false);
+            //setIsLocked(false);
             resolve(downloadURL);
         
           } catch (error) {
@@ -401,7 +407,7 @@ export default function App() {
                 <MaterialIcons name="info-outline" style={styles.icon} />
 
                 <Text style={styles.buttonText}>
-                  {isLocked ? 'Tap here to go back' : 'Tap here to start'}
+                  {isLoading ? 'Loading...' : (isLocked ? 'Tap here to go back' : 'Tap here to start')}
                 </Text>
               </View>
             </TouchableOpacity>
@@ -468,6 +474,7 @@ export default function App() {
 const styles = StyleSheet.create({
   Ucontainer: {
     flex: 1,
+    backgroundColor: '#ffffff',
   },
   titleText: {
     fontSize: 18,
