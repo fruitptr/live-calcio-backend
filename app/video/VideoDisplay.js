@@ -26,7 +26,7 @@ export default function App() {
   const [fixtureId, setFixtureId] = useState(null);
   const [playersData, setPlayersData] = useState(null);
   const [playerData, setPlayerData] = useState(null);
-  const [jerseyNumber, setJerseyNumber] = useState(10);
+  const [jerseyNumber, setJerseyNumber] = useState(8);
   const [playerImageSource, setPlayerImageSource] = useState(require('./../../assets/playerDemo.png'));
   const [displayPlayerCard, setDisplayPlayerCard] = useState(false);
   const [selectedSubscription, setSelectedSubscription] = useState(0);
@@ -196,6 +196,7 @@ export default function App() {
         const playersData = playersResponse.data.response[0].players;
         console.log(playersData)
         setPlayersData(playersData);
+        console.log("Jersey Number: ", jerseyNumber)
         findPlayerData(playersData, jerseyNumber);
       }
     } catch (error) {
@@ -238,11 +239,16 @@ export default function App() {
     setDisplayPlayerCard(false);
   };
 
-  const handlePlayerTapped = async (event) => {
+  const getCurrentPosition = async () => {
     const currentStatus = await video.current.getStatusAsync();
     const currentPosition = currentStatus.positionMillis;
     console.log("Current Position: ", currentPosition);
-    //NOW WE NEED TO SUBTRACT -3000 FROM THE CURRENT POSITION TO GET THE CORRECT TIME FOR TRIMMING
+    return currentPosition;
+  }
+
+  const handlePlayerTapped = async (event) => {
+    event.persist();
+    const currentPosition = await getCurrentPosition();
     const storage = FIREBASE_STORAGE;
     const auth = FIREBASE_AUTH;
     const user = auth.currentUser;
@@ -301,10 +307,10 @@ export default function App() {
     const fileName = `video_${timestamp}.mp4`;
     const storageRef = ref(storage, `media/${user.uid}/${fileName}`);
     // REMOVE THESE 3 LINES BEFORE PRODUCTION!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-    fetchTimezoneData();
-    setDisplayPlayerCard(true);
-    setIsLocked(false);
-    return;
+    // fetchTimezoneData();
+    // setDisplayPlayerCard(true);
+    // setIsLocked(false);
+    // return;
     try {
       const response = await fetch(videoURI);
       if (!response.ok) {
@@ -329,11 +335,12 @@ export default function App() {
             video: downloadURL,
             x: xInt,
             y: yInt,
+            timestamp: currentPosition,
           };
           console.log("REQUEST DATA: ", requestData)
           try {
             //IF YOU ENCOUNTER ISSUE, IT MAY BE DUE TO THE MAGIC STRING BELOW. JUST PASTE THE URL INSTEAD AS A STRING
-            const response = await fetch(`${process.env.EXPO_PUBLIC_MODEL_API_URL}`, {
+            const response = await fetch('https://af17-35-243-221-203.ngrok-free.app/predict/', {
               method: 'POST',
               headers: {
                 'Content-Type': 'application/json',
