@@ -153,7 +153,7 @@ export default function App() {
     setIsLocked(!isLocked);
   };
 
-  const fetchTimezoneData = async () => {
+  const fetchTimezoneData = async (jerseyNumberResponse) => {
     const options = {
       method: 'GET',
       url: 'https://api-football-v1.p.rapidapi.com/v3/fixtures',
@@ -170,14 +170,14 @@ export default function App() {
       if (response.data.response && response.data.response.length > 0) {
         const fixtureId = response.data.response[0].fixture.id;
         setFixtureId(fixtureId);
-        await fetchPlayersData(fixtureId);
+        await fetchPlayersData(fixtureId, jerseyNumberResponse);
       }
     } catch (error) {
       console.error(error);
     }
   };
 
-  const fetchPlayersData = async fixtureId => {
+  const fetchPlayersData = async (fixtureId, jerseyNumberResponse) => {
     const playersOptions = {
       method: 'GET',
       url: 'https://api-football-v1.p.rapidapi.com/v3/fixtures/players',
@@ -198,7 +198,7 @@ export default function App() {
         console.log(playersData)
         setPlayersData(playersData);
         console.log("Jersey Number: ", jerseyNumber)
-        await findPlayerData(playersData, jerseyNumber);
+        await findPlayerData(playersData, jerseyNumberResponse);
       }
     } catch (error) {
       console.error(error);
@@ -248,6 +248,10 @@ export default function App() {
   const findPlayerData = async (playersData, jerseyNumberToFind) => {
     const playerId = playerDict[jerseyNumberToFind];
     console.log("Player ID: ", playerId)
+    if (!playerId) {
+      Alert.alert('Error', 'Player not found!');
+      return;
+    }
     console.log(playersData)
     const player = playersData.find(player => player.player.id === playerId);
     console.log("Player stats: ", player.statistics[0])
@@ -388,7 +392,7 @@ export default function App() {
           console.log("REQUEST DATA: ", requestData)
           try {
             //IF YOU ENCOUNTER ISSUE, IT MAY BE DUE TO THE MAGIC STRING BELOW. JUST PASTE THE URL INSTEAD AS A STRING
-            const response = await fetch('https://2815-35-240-150-124.ngrok-free.app/predict/', {
+            const response = await fetch('https://5f15-34-147-83-242.ngrok-free.app/predict/', {
               method: 'POST',
               headers: {
                 'Content-Type': 'application/json',
@@ -403,19 +407,20 @@ export default function App() {
             const responseData = await response.json();
             console.log(responseData)
         
-            if (responseData.jersey_number !== 'Not a player') {
+            if (responseData.jersey_number !== 'Not a player' && responseData.jersey_number !== 'Not a player (Jersey color is not red)' && responseData.jersey_number !== 'Cannot identify') {
               const jerseyNumberResponse = responseData.jersey_number;
               console.log(jerseyNumberResponse);
               setJerseyNumber(jerseyNumberResponse);
               console.log("FROM STATE: ", jerseyNumber)
-              fetchTimezoneData();
+              await fetchTimezoneData(jerseyNumberResponse);
+              setDisplayPlayerCard(true);
             } else {
               console.log('Response is "Not a player"');
+              setJerseyNumber(8);
               Alert.alert('Error', 'No player detected in the tapped area!');
             }
             
             setIsLoading(false);
-            setDisplayPlayerCard(true);
             //setIsLocked(false);
             resolve(downloadURL);
         

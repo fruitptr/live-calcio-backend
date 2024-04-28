@@ -16,8 +16,8 @@ const PlayerCard = ({ name, imageSource, stats, minutesPlayed, rating, records, 
 
   const [isStatsTrackerOn, setIsStatsTrackerOn] = useState(false);
 
-  const isSubscriptionOne = subscription === 1;
-  const isSubscriptionTwo = subscription === 2;
+  const isSubscriptionOne = subscription === 'Kf10mVUVZ2yeNL4VOYbR';
+  const isSubscriptionTwo = subscription === 'hQwAZa5f8TUXStJd4Apc';
 
   const getAdditionalText = (key, value) => {
     const record = records.find(record => record.stat === key);
@@ -64,9 +64,9 @@ const PlayerCard = ({ name, imageSource, stats, minutesPlayed, rating, records, 
           {stats &&
             Object.entries(stats).map(([key, value]) => {
               if (
-                (subscription === 0 && ['goals', 'assists', 'shots', 'passes'].includes(key)) ||
-                (subscription === 1) ||
-                (subscription === 2)
+                (subscription === 'EdmRMmS6nhRjXSvo5HjF' && ['goals', 'assists', 'shots', 'passes'].includes(key)) ||
+                (subscription === 'Kf10mVUVZ2yeNL4VOYbR') ||
+                (subscription === 'hQwAZa5f8TUXStJd4Apc')
               ) {
                 return (
                   <View key={key} style={styles.statRow}>
