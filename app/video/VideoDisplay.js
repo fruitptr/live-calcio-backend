@@ -8,7 +8,7 @@ import Header from '../Header';
 import PlayerCard from './PlayerCard';
 import axios from 'axios';
 import { FIRESTORE_DB, FIREBASE_STORAGE, FIREBASE_AUTH } from '../../firebaseConfig';
-import { collection, getDocs } from 'firebase/firestore';
+import { collection, getDocs, addDoc } from 'firebase/firestore';
 import { uploadBytesResumable, ref, getDownloadURL } from 'firebase/storage';
 import { useFocusEffect } from '@react-navigation/native';
 import { doc, getDoc } from 'firebase/firestore';
@@ -170,7 +170,7 @@ export default function App() {
       if (response.data.response && response.data.response.length > 0) {
         const fixtureId = response.data.response[0].fixture.id;
         setFixtureId(fixtureId);
-        fetchPlayersData(fixtureId);
+        await fetchPlayersData(fixtureId);
       }
     } catch (error) {
       console.error(error);
@@ -198,12 +198,52 @@ export default function App() {
         console.log(playersData)
         setPlayersData(playersData);
         console.log("Jersey Number: ", jerseyNumber)
-        findPlayerData(playersData, jerseyNumber);
+        await findPlayerData(playersData, jerseyNumber);
       }
     } catch (error) {
       console.error(error);
     }
   };
+
+  const checkRecordsBroken = async (playerStats, playerName) => {
+    console.log("IN CHECK RECORDS BROKEN")
+    const stats = {
+      goals: playerStats.goals.total,
+      assists: playerStats.goals.assists,
+      shots: playerStats.shots.total,
+      passesCompleted: playerStats.passes.total,
+      tackles: playerStats.tackles.total,
+      fouls: playerStats.fouls.committed,
+      duelsWon: playerStats.duels.won,
+      offsides: playerStats.offsides,
+      foulsDrawn: playerStats.fouls.drawn
+    };
+
+    const db = FIRESTORE_DB;
+
+    const recordsCollection = await getDocs(collection(db, 'records'));
+    const recordsData = recordsCollection.docs.map(doc => doc.data());
+
+    // Iterate through each stat and check if it breaks any records
+    for (const [stat, value] of Object.entries(stats)) {
+        const currentRecord = recordsData.find(record => record.stat === stat);
+        console.log("Current Record: ", currentRecord)
+        console.log("Stat: ", stat  )
+        console.log("Value: ", value)
+        console.log("Player name: ", playerName)
+        if (currentRecord && value > currentRecord.value) {
+            // If the player broke a record, add a document to 'recordsTemporary' collection
+            const newRecord = {
+                playerName: playerName,
+                stat: stat,
+                currentrecord: currentRecord.value,
+                newrecord: value
+            };
+            await addDoc(collection(db, 'recordsTemporary'), newRecord);
+            console.log("Added records to temporary")
+        }
+    }
+  }
 
   const findPlayerData = async (playersData, jerseyNumberToFind) => {
     const playerId = playerDict[jerseyNumberToFind];
@@ -211,9 +251,14 @@ export default function App() {
     console.log(playersData)
     const player = playersData.find(player => player.player.id === playerId);
     console.log("Player stats: ", player.statistics[0])
+    if (!player) {
+      Alert.alert('Error', 'Player not found!');
+      return;
+    }
     setPlayerData(player);
     setPlayerImageSource({ uri: player.player.photo });
     fetchRecordsData();
+    checkRecordsBroken(player.statistics[0], player.player.name);
   };
 
   const fetchRecordsData = async () => {
@@ -343,7 +388,7 @@ export default function App() {
           console.log("REQUEST DATA: ", requestData)
           try {
             //IF YOU ENCOUNTER ISSUE, IT MAY BE DUE TO THE MAGIC STRING BELOW. JUST PASTE THE URL INSTEAD AS A STRING
-            const response = await fetch('https://a0e6-35-243-221-203.ngrok-free.app/predict/', {
+            const response = await fetch('https://2815-35-240-150-124.ngrok-free.app/predict/', {
               method: 'POST',
               headers: {
                 'Content-Type': 'application/json',

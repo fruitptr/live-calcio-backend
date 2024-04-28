@@ -3,7 +3,7 @@ import { View, Text, StyleSheet, TouchableOpacity, Image, Modal, TextInput, Scro
 import Icon from 'react-native-vector-icons/MaterialIcons';
 import { FIREBASE_AUTH } from '../../firebaseConfig';
 import { signOut, onAuthStateChanged, reauthenticateWithCredential, updatePassword, EmailAuthProvider } from 'firebase/auth';
-import { doc, updateDoc, getDoc } from 'firebase/firestore';
+import { doc, updateDoc, getDoc, getDocs, collection } from 'firebase/firestore';
 import {FIRESTORE_DB} from '../../firebaseConfig';
 import { router } from 'expo-router';
 import * as ScreenOrientation from 'expo-screen-orientation';
@@ -16,6 +16,7 @@ const SettingsScreen = () => {
   const [currentPassword, setCurrentPassword] = useState('');
   const [newPassword, setNewPassword] = useState('');
   const [selectedSubscription, setSelectedSubscription] = useState(0);
+  const [subscriptionTiers, setSubscriptionTiers] = useState([]);
 
   const initializeUser = () => {
     const user = auth.currentUser;
@@ -26,9 +27,21 @@ const SettingsScreen = () => {
     }
   };
 
+  const fetchSubscriptionTiers = async () => {
+    try {
+      const tiersSnapshot = await getDocs(collection(db, 'subscriptiontiers'));
+      const tiersData = tiersSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+      setSubscriptionTiers(tiersData);
+      console.log('Subscription tiers fetched successfully!', tiersData)
+    } catch (error) {
+      console.log('Error fetching subscription tiers:', error);
+    }
+  };
+
 
   useEffect(() => {
     initializeUser();
+    fetchSubscriptionTiers();
     initializeSubscription();
     ScreenOrientation.lockAsync(ScreenOrientation.OrientationLock.PORTRAIT_UP);
     
@@ -143,47 +156,26 @@ const SettingsScreen = () => {
       <Text style={styles.inlineText}>
         Change Subscription
       </Text>
-        <View style={styles.modalContainer}>
-          <TouchableOpacity
-            style={[
-              styles.subscriptionCard,
-              selectedSubscription === 0 ? styles.selectedSubscription : null
-            ]}
-            onPress={() => handleEditSubscription(0)}
-          >
-            <Text style={styles.subscriptionHeader}>Free Tier</Text>
-            <Text>Access to goals, assists, shots, passes.</Text>
-            <Text>No access to stats tracker</Text>
-          </TouchableOpacity>
-          <TouchableOpacity
-            style={[
-              styles.subscriptionCard,
-              selectedSubscription === 1 ? styles.selectedSubscription : null
-            ]}
-            onPress={() => handleEditSubscription(1)}
-          >
-            <Text style={styles.subscriptionHeader}>B Tier - Rs. 1,500/month</Text>
-            <Text>Access to goals, assists, shots, passes.</Text>
-            <Text>Access to advanced statistics.
-            </Text>
-            <Text>No access to stats tracker</Text>
-          </TouchableOpacity>
-          <TouchableOpacity
-            style={[
-              styles.subscriptionCard,
-              selectedSubscription === 2 ? styles.selectedSubscription : null
-            ]}
-            onPress={() => handleEditSubscription(2)}
-          >
-            <Text style={styles.subscriptionHeader}>A Tier - Rs. 2,000/month</Text>
-            <Text>Access to goals, assists, shots, passes.</Text>
-            <Text>Access to advanced statistics.</Text>
-            <Text>Access to stats tracker</Text>
-          </TouchableOpacity>
-          <TouchableOpacity style={styles.modalButton} onPress={handleSaveChanges}>
+      <View style={styles.modalContainer}>
+      {subscriptionTiers.map(tier => (
+        <TouchableOpacity
+          key={tier.id}
+          style={[
+            styles.subscriptionCard,
+            selectedSubscription === tier.id ? styles.selectedSubscription : null
+          ]}
+          onPress={() => handleEditSubscription(tier.id)}
+        >
+          <Text style={styles.subscriptionHeader}>{tier.name} - Rs. {tier.price}/month</Text>
+          {tier.description.split('.').map((text, index) => (
+        <Text key={index}>{text.trim()}</Text>
+      ))}
+        </TouchableOpacity>
+      ))}
+      <TouchableOpacity style={styles.modalButton} onPress={handleSaveChanges}>
         <Text style={styles.modalButtonText}>Update Subscription</Text>
       </TouchableOpacity>
-        </View>
+    </View>
       
       <View style={styles.logoutContainer}>
         <TouchableOpacity style={styles.modalButton} onPress={handleLogout}>
