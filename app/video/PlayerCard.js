@@ -6,19 +6,17 @@ import {
   Switch,
   StyleSheet,
   ScrollView,
-  TouchableOpacity
 } from 'react-native';
 
-const PlayerCard = ({ name, imageSource, stats, minutesPlayed, rating, records, jerseyNumber, position, onToggleSwitch, subscription }) => {
+const PlayerCard = ({ name, imageSource, stats, minutesPlayed, rating, records, jerseyNumber, position, subscription }) => {
   const replaceNullWithZero = value => {
     return value !== null ? value : 0;
   };
 
   const [isStatsTrackerOn, setIsStatsTrackerOn] = useState(false);
-
-  const isSubscriptionOne = subscription === 'Kf10mVUVZ2yeNL4VOYbR';
   const isSubscriptionTwo = subscription === 'hQwAZa5f8TUXStJd4Apc';
 
+  // If stats tracker is on, check if the player is close to breaking a record (based on threshold value)
   const getAdditionalText = (key, value) => {
     const record = records.find(record => record.stat === key);
     if (isStatsTrackerOn && record && replaceNullWithZero(value) >= record.value - record.threshold) {
@@ -26,6 +24,20 @@ const PlayerCard = ({ name, imageSource, stats, minutesPlayed, rating, records, 
     }
     return '';
   };
+
+  // Add a space before each capital letter in the stat name 
+  const beautifyStatName = (statName) => {
+    const firstLetter = statName.charAt(0).toUpperCase();
+    let restOfTheName = statName.slice(1);
+
+    for (let i = 0; i < restOfTheName.length; i++) {
+      if (restOfTheName[i] === restOfTheName[i].toUpperCase()) {
+          restOfTheName = restOfTheName.slice(0, i) + ' ' + restOfTheName.slice(i);
+          i++;
+      }
+    }
+    return firstLetter + restOfTheName;
+  }
 
   return (
     <ScrollView
@@ -64,14 +76,14 @@ const PlayerCard = ({ name, imageSource, stats, minutesPlayed, rating, records, 
           {stats &&
             Object.entries(stats).map(([key, value]) => {
               if (
-                (subscription === 'EdmRMmS6nhRjXSvo5HjF' && ['goals', 'assists', 'shots', 'passes'].includes(key)) ||
-                (subscription === 'Kf10mVUVZ2yeNL4VOYbR') ||
+                (subscription === 'Kf10mVUVZ2yeNL4VOYbR' && ['goals', 'assists', 'shots', 'passes'].includes(key)) ||
+                (subscription === 'EdmRMmS6nhRjXSvo5HjF') || 
                 (subscription === 'hQwAZa5f8TUXStJd4Apc')
               ) {
                 return (
                   <View key={key} style={styles.statRow}>
                     <Text style={styles.statText}>
-                      {key.charAt(0).toUpperCase() + key.slice(1)}: {replaceNullWithZero(value)}
+                      {beautifyStatName(key)}: {replaceNullWithZero(value)}
                     </Text>
                     <Text style={styles.additionalText}>
                       {getAdditionalText(key, value)}

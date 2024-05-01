@@ -19,18 +19,14 @@ export default function App() {
   const [aspectRatio, setAspectRatio] = useState(16 / 9);
   const [origVideoWidth, setVideoWidth] = useState(0);
   const [origVideoHeight, setVideoHeight] = useState(0);
-  const [orientation, setOrientation] = useState(1);
   const [isLocked, setIsLocked] = useState(false);
   const video = useRef(null);
-  const [timezoneData, setTimezoneData] = useState(null);
-  const [fixtureId, setFixtureId] = useState(null);
-  const [playersData, setPlayersData] = useState(null);
   const [playerData, setPlayerData] = useState(null);
   const [jerseyNumber, setJerseyNumber] = useState(8);
   const [playerImageSource, setPlayerImageSource] = useState(require('./../../assets/playerDemo.png'));
-  const [displayPlayerCard, setDisplayPlayerCard] = useState(false);
   const [selectedSubscription, setSelectedSubscription] = useState(0);
   const [isLoading, setIsLoading] = useState(false);
+  const [playerFound, setPlayerFound] = useState(false);
   const positionsDict = {
     "G": "Goalkeeper",
     "D": "Defender",
@@ -120,12 +116,6 @@ export default function App() {
     initializeSubscription();
   }, []);
 
-  // useEffect(() => {
-  //   if (videoURI) {
-  //     lockOrientation();
-  //   }
-  // }, [videoURI]);
-
   const pickVideo = async () => {
     const permissionResult =
       await ImagePicker.requestMediaLibraryPermissionsAsync();
@@ -145,7 +135,6 @@ export default function App() {
       setVideoWidth(video.width);
       setVideoHeight(video.height);
       setAspectRatio(aspectRatio);
-      console.log(video.uri);
     }
   };
 
@@ -153,7 +142,7 @@ export default function App() {
     setIsLocked(!isLocked);
   };
 
-  const fetchTimezoneData = async (jerseyNumberResponse) => {
+  const fetchFixturesData = async (jerseyNumberResponse) => {
     const options = {
       method: 'GET',
       url: 'https://api-football-v1.p.rapidapi.com/v3/fixtures',
@@ -166,10 +155,8 @@ export default function App() {
 
     try {
       const response = await axios.request(options);
-      setTimezoneData(response.data);
       if (response.data.response && response.data.response.length > 0) {
         const fixtureId = response.data.response[0].fixture.id;
-        setFixtureId(fixtureId);
         await fetchPlayersData(fixtureId, jerseyNumberResponse);
       }
     } catch (error) {
@@ -196,7 +183,6 @@ export default function App() {
       ) {
         const playersData = playersResponse.data.response[0].players;
         console.log(playersData)
-        setPlayersData(playersData);
         console.log("Jersey Number: ", jerseyNumber)
         await findPlayerData(playersData, jerseyNumberResponse);
       }
@@ -224,7 +210,6 @@ export default function App() {
     const recordsCollection = await getDocs(collection(db, 'records'));
     const recordsData = recordsCollection.docs.map(doc => doc.data());
 
-    // Iterate through each stat and check if it breaks any records
     for (const [stat, value] of Object.entries(stats)) {
         const currentRecord = recordsData.find(record => record.stat === stat);
         console.log("Current Record: ", currentRecord)
@@ -232,7 +217,6 @@ export default function App() {
         console.log("Value: ", value)
         console.log("Player name: ", playerName)
         if (currentRecord && value > currentRecord.value) {
-            // If the player broke a record, add a document to 'recordsTemporary' collection
             const newRecord = {
                 playerName: playerName,
                 stat: stat,
@@ -249,6 +233,7 @@ export default function App() {
     const playerId = playerDict[jerseyNumberToFind];
     console.log("Player ID: ", playerId)
     if (!playerId) {
+      setPlayerFound(false)
       Alert.alert('Error', 'Player not found!');
       return;
     }
@@ -256,9 +241,11 @@ export default function App() {
     const player = playersData.find(player => player.player.id === playerId);
     console.log("Player stats: ", player.statistics[0])
     if (!player) {
+      setPlayerFound(false)
       Alert.alert('Error', 'Player not found!');
       return;
     }
+    setPlayerFound(true)
     setPlayerData(player);
     setPlayerImageSource({ uri: player.player.photo });
     fetchRecordsData();
@@ -286,7 +273,7 @@ export default function App() {
   };
 
   const closePlayerCard = () => {
-    setDisplayPlayerCard(false);
+    setPlayerFound(false);
   };
 
   const getCurrentPosition = async () => {
@@ -332,13 +319,10 @@ export default function App() {
       const tapX = locationX - blackBarWidth;
       const tapY = locationY;
       if (tapX < 0 || tapY < 0 || tapX > expectedVideoWidth || tapY > height) {
-        console.log("Tapped outside the video area!");
         return;
       }
       XCoordOfOrigVideo = tapX * (origVideoWidth / expectedVideoWidth);
       YCoordOfOrigVideo = tapY * (origVideoHeight / height);
-      console.log("Original Video X Coordinate:", XCoordOfOrigVideo);
-      console.log("Original Video Y Coordinate:", YCoordOfOrigVideo);
     }
     const currentTime = new Date();
     const timestamp = `${currentTime.getFullYear()}-${(currentTime.getMonth() + 1)
@@ -356,11 +340,6 @@ export default function App() {
 
     const fileName = `video_${timestamp}.mp4`;
     const storageRef = ref(storage, `media/${user.uid}/${fileName}`);
-    // REMOVE THESE 3 LINES BEFORE PRODUCTION!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-    // fetchTimezoneData();
-    // setDisplayPlayerCard(true);
-    // setIsLocked(false);
-    // return;
     setIsLocked(false);
     setIsLoading(true);
     try {
@@ -392,7 +371,7 @@ export default function App() {
           console.log("REQUEST DATA: ", requestData)
           try {
             //IF YOU ENCOUNTER ISSUE, IT MAY BE DUE TO THE MAGIC STRING BELOW. JUST PASTE THE URL INSTEAD AS A STRING
-            const response = await fetch('https://5f15-34-147-83-242.ngrok-free.app/predict/', {
+            const response = await fetch('https://ed80-34-30-45-236.ngrok-free.app/predict/', {
               method: 'POST',
               headers: {
                 'Content-Type': 'application/json',
@@ -411,9 +390,7 @@ export default function App() {
               const jerseyNumberResponse = responseData.jersey_number;
               console.log(jerseyNumberResponse);
               setJerseyNumber(jerseyNumberResponse);
-              console.log("FROM STATE: ", jerseyNumber)
-              await fetchTimezoneData(jerseyNumberResponse);
-              setDisplayPlayerCard(true);
+              await fetchFixturesData(jerseyNumberResponse);
             } else {
               console.log('Response is "Not a player"');
               setJerseyNumber(8);
@@ -421,7 +398,6 @@ export default function App() {
             }
             
             setIsLoading(false);
-            //setIsLocked(false);
             resolve(downloadURL);
         
           } catch (error) {
@@ -437,7 +413,12 @@ export default function App() {
     }
   }
 
+  const handleVideoDisplayError = (error) => {
+    Alert.alert('Error', 'Could not display video! Please try again.');
+    console.log('Error displaying video: ', error);
+  };
 
+  // If the videoURI is provided from the Upload Video section, only then display this section.
   if (videoURI) {
   return (
     <View style={styles.container}>
@@ -450,6 +431,7 @@ export default function App() {
           resizeMode={ResizeMode.CONTAIN}
           isLooping
           onTouchStart={handlePlayerTapped}
+          onError={handleVideoDisplayError}
         />
         <TouchableOpacity style={styles.button}
             onPress={toggleLock}>
@@ -461,7 +443,7 @@ export default function App() {
                 </Text>
               </View>
             </TouchableOpacity>
-            {displayPlayerCard && (
+            {playerFound && (
               <TouchableOpacity style={styles.closeButton} onPress={closePlayerCard}>
                   <View style={styles.buttonContent}>
                     <MaterialIcons name="close" style={styles.icon} />
@@ -473,9 +455,9 @@ export default function App() {
           <View style={styles.overlay}>
             <Header />
             <View style={styles.PlayerCardStyles}>
-              { displayPlayerCard && (
+              { playerFound && (
               <PlayerCard
-                name= {playerData ? playerData.player.name : "Player Name"}
+                name= {playerData ? playerData.player.name : "Bruno Fernandes"}
                 imageSource={ playerImageSource }
                 stats={{
                   goals: playerData ? playerData.statistics[0].goals.total : 0,
@@ -492,8 +474,7 @@ export default function App() {
                 rating={playerData ? playerData.statistics[0].games.rating : 0}
                 records = {recordsData ? recordsData : []}
                 jerseyNumber={jerseyNumber}
-                position= { playerData ? positionsDict[playerData.statistics[0].games.position] : "Position"}
-                onToggleSwitch={() => {}}
+                position= { playerData ? positionsDict[playerData.statistics[0].games.position] : "Midfielder"}
                 subscription={selectedSubscription}
               />
               )}
