@@ -283,6 +283,10 @@ export default function App() {
     return currentPosition;
   }
 
+  const goBack = () => {
+    setVideoURI(null);
+  };
+
   const handlePlayerTapped = async (event) => {
     event.persist();
     const currentPosition = await getCurrentPosition();
@@ -433,6 +437,9 @@ export default function App() {
           onTouchStart={handlePlayerTapped}
           onError={handleVideoDisplayError}
         />
+        <TouchableOpacity style={styles.goBack} onPress={goBack}>
+            <Text>Go Back</Text>
+          </TouchableOpacity>
         <TouchableOpacity style={styles.button}
             onPress={toggleLock}>
               <View style={styles.buttonContent}>
@@ -623,5 +630,17 @@ const styles = StyleSheet.create({
     fontSize: 16,
     color: 'black',
     fontWeight: 'bold'
+  },
+  goBack: {
+    zIndex: 999,
+    position: 'absolute',
+    backgroundColor: 'white',
+    padding: 10,
+    marginLeft: 20,
+    borderRadius: 5,
+    borderWidth: 1,
+    borderColor: '#bf0000',
+    top: 70,
+    marginRight: '7px'
   }
 });
